@@ -98,12 +98,13 @@
                     <i class="fa-solid fa-circle-info mr-1"></i> กรุณากรอกข้อมูลให้ครบถ้วนเพื่อให้ฐานข้อมูลทำเนียบสมบูรณ์ที่สุด
                 </div>
                 
-                <form id="dataForm" class="p-6 sm:p-8 space-y-6" onsubmit="handleFormSubmit(event)">
+                <form id="dataForm" class="p-6 sm:p-8 space-y-8" onsubmit="handleFormSubmit(event)">
                     <input type="hidden" id="recordId">
+                    
                     <!-- ส่วนที่ 1: ข้อมูลหน่วยงาน -->
                     <div>
                         <h3 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
-                            <i class="fa-solid fa-sitemap text-slate-400 mr-2"></i>ข้อมูลหน่วยงาน
+                            <i class="fa-solid fa-sitemap text-slate-400 mr-2"></i>ส่วนที่ 1: ข้อมูลหน่วยงาน
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             
@@ -138,10 +139,56 @@
                         </div>
                     </div>
 
-                    <!-- ส่วนที่ 2: ข้อมูลหัวหน้าหน่วยงาน -->
+                    <!-- ส่วนที่ 2: ที่ตั้งหน่วยงาน (อัปเดตใหม่) -->
                     <div>
                         <h3 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
-                            <i class="fa-solid fa-user-tie text-slate-400 mr-2"></i>ข้อมูลหัวหน้าหน่วยงาน
+                            <i class="fa-solid fa-map-location-dot text-slate-400 mr-2"></i>ส่วนที่ 2: ที่ตั้งสำนักงาน
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ชื่ออาคาร/สำนักงาน</label>
+                                <input type="text" id="building" placeholder="เช่น อาคารที่ว่าการอำเภอ (หลังใหม่)" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ชั้น / ห้อง</label>
+                                <input type="text" id="floorRoom" placeholder="เช่น ชั้น 2 ห้อง 201" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">เลขที่</label>
+                                <input type="text" id="houseNo" placeholder="เช่น 123/4" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">หมู่ที่</label>
+                                <input type="text" id="moo" placeholder="เช่น ม.1" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ตำบล <span class="text-red-500">*</span></label>
+                                <input type="text" id="subDistrict" required placeholder="เช่น นาสาร" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">อำเภอ</label>
+                                <input type="text" id="district" value="บ้านนาสาร" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all bg-slate-50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">จังหวัด</label>
+                                <input type="text" id="province" value="สุราษฎร์ธานี" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all bg-slate-50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">รหัสไปรษณีย์</label>
+                                <input type="text" id="zipCode" value="84120" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all bg-slate-50">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">พิกัดแผนที่ (ละติจูด, ลองจิจูด)</label>
+                                <input type="text" id="latLng" placeholder="เช่น 8.7981, 99.3638 (หาได้จาก Google Maps)" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-circle-info"></i> หากระบุพิกัด ระบบจะสร้างปุ่มนำทางให้อัตโนมัติ</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ส่วนที่ 3: ข้อมูลหัวหน้าหน่วยงาน -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
+                            <i class="fa-solid fa-user-tie text-slate-400 mr-2"></i>ส่วนที่ 3: ข้อมูลหัวหน้าหน่วยงาน
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
@@ -163,7 +210,7 @@
                         </div>
                     </div>
 
-                    <!-- ส่วนที่ 3: ข้อมูลผู้แจ้ง -->
+                    <!-- ส่วนที่ 4: ข้อมูลผู้แจ้ง -->
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <h3 class="text-sm font-semibold text-slate-800 mb-3">
                             <i class="fa-solid fa-pen-to-square text-slate-400 mr-2"></i>ข้อมูลผู้แจ้ง (สำหรับอ้างอิง ไม่แสดงในแดชบอร์ด)
@@ -346,7 +393,7 @@
                     </div>
                 </div>
 
-                <!-- สร้าง Admin (Mock) -->
+                <!-- สร้าง Admin -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                     <h3 class="font-bold text-lg text-slate-800 mb-3"><i class="fa-solid fa-user-plus mr-2"></i>เพิ่มผู้ดูแลระบบ (Admin)</h3>
                     <form class="flex gap-2" onsubmit="handleAddAdmin(event)">
@@ -407,7 +454,6 @@
         let isLoggedIn = false;  
         let allAgencies = []; 
 
-        // ฟังก์ชันกลางสำหรับเรียก Google Apps Script API
         async function fetchAPI(action, payload = null) {
             try {
                 const options = {
@@ -492,10 +538,23 @@
             if (typeVal === 'อื่นๆ' && typeOther !== '') typeVal = `อื่นๆ (${typeOther})`;
 
             const formData = {
-                id: idVal ? idVal : "", // ถ้าแก้จะมี id, ถ้าเพิ่มใหม่จะว่าง
+                id: idVal ? idVal : "", 
                 agencyType: typeVal,
                 agencyName: document.getElementById('agencyName').value.trim(),
                 agencyPhone: document.getElementById('agencyPhone').value.trim(),
+                
+                // ข้อมูลที่ตั้ง
+                building: document.getElementById('building').value.trim(),
+                floorRoom: document.getElementById('floorRoom').value.trim(),
+                houseNo: document.getElementById('houseNo').value.trim(),
+                moo: document.getElementById('moo').value.trim(),
+                subDistrict: document.getElementById('subDistrict').value.trim(),
+                district: document.getElementById('district').value.trim(),
+                province: document.getElementById('province').value.trim(),
+                zipCode: document.getElementById('zipCode').value.trim(),
+                latLng: document.getElementById('latLng').value.trim(),
+
+                // ข้อมูลหัวหน้าหน่วยงาน และผู้แจ้ง
                 headName: document.getElementById('headName').value.trim(),
                 headTitle: document.getElementById('headTitle').value.trim(),
                 headMobile: document.getElementById('headMobile').value.trim(),
@@ -529,6 +588,9 @@
         function resetFormState() {
             document.getElementById('dataForm').reset();
             document.getElementById('recordId').value = '';
+            document.getElementById('district').value = 'บ้านนาสาร';
+            document.getElementById('province').value = 'สุราษฎร์ธานี';
+            document.getElementById('zipCode').value = '84120';
             document.getElementById('btnSubmit').innerHTML = '<i class="fa-solid fa-save"></i> <span>บันทึกข้อมูล</span>';
             document.getElementById('btnCancelEdit').classList.add('hidden');
             toggleOtherTypeInput();
@@ -590,7 +652,9 @@
                 else if(filterType !== "") matchType = item.agencyType === filterType;
                 
                 const matchDropdown = dropdownVal === "" || item.agencyName === dropdownVal;
-                const searchString = `${item.agencyName} ${item.headName} ${item.headTitle} ${item.agencyPhone} ${item.headMobile} ${item.agencyType}`.toLowerCase();
+                
+                // ค้นหาครอบคลุมชื่อ, ตำแหน่ง, เบอร์, อาคาร, ตำบล ฯลฯ
+                const searchString = `${item.agencyName} ${item.headName} ${item.headTitle} ${item.agencyPhone} ${item.headMobile} ${item.agencyType} ${item.building} ${item.subDistrict}`.toLowerCase();
                 const matchSearch = searchString.includes(searchVal);
                 
                 return matchType && matchDropdown && matchSearch;
@@ -617,6 +681,18 @@
                 if(item.agencyType.includes('โรงเรียน')) badgeColor = 'bg-orange-100 text-orange-800';
                 if(item.agencyType.includes('วิสาหกิจ')) badgeColor = 'bg-purple-100 text-purple-800';
 
+                // จัดเรียงที่อยู่
+                let addressArr = [];
+                if(item.building) addressArr.push(item.building);
+                if(item.floorRoom) addressArr.push(`ชั้น/ห้อง ${item.floorRoom}`);
+                if(item.houseNo) addressArr.push(`เลขที่ ${item.houseNo}`);
+                if(item.moo) addressArr.push(`หมู่ ${item.moo}`);
+                if(item.subDistrict) addressArr.push(`ต.${item.subDistrict}`);
+                if(item.district) addressArr.push(`อ.${item.district}`);
+                if(item.province) addressArr.push(`จ.${item.province}`);
+                if(item.zipCode) addressArr.push(item.zipCode);
+                const fullAddress = addressArr.join(' ') || '-';
+
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow overflow-hidden flex flex-col relative';
                 
@@ -630,21 +706,33 @@
                         </div>
                     </div>
                     <div class="p-5 flex-grow space-y-4">
+                        
+                        <!-- ข้อมูลหัวหน้าหน่วยงาน -->
                         <div class="flex items-start">
                             <i class="fa-solid fa-user-tie w-6 mt-1 text-slate-400"></i>
                             <div>
                                 <p class="text-sm text-slate-500 mb-0.5">หัวหน้าหน่วยงาน</p>
                                 <p class="font-medium text-slate-800">${item.headName}</p>
                                 <p class="text-sm text-slate-600">${item.headTitle}</p>
+                                <a href="tel:${item.headMobile}" class="text-sm font-medium text-slate-800 hover:text-primary-600 mt-1 inline-block"><i class="fa-solid fa-mobile-screen-button mr-1"></i> ${item.headMobile}</a>
                             </div>
                         </div>
-                        <div class="flex items-center">
-                            <i class="fa-solid fa-mobile-screen-button w-6 text-slate-400"></i>
-                            <div>
-                                <p class="text-sm text-slate-500 mb-0.5">มือถือส่วนตัว</p>
-                                <a href="tel:${item.headMobile}" class="font-medium text-slate-800 hover:text-primary-600">${item.headMobile}</a>
+                        
+                        <!-- ที่ตั้งสำนักงาน -->
+                        <div class="pt-3 border-t border-slate-100 flex items-start">
+                            <i class="fa-solid fa-location-dot w-6 mt-1 text-red-400"></i>
+                            <div class="w-full">
+                                <p class="text-sm text-slate-500 mb-0.5">ที่ตั้งสำนักงาน</p>
+                                <p class="text-sm text-slate-700 leading-relaxed">${fullAddress}</p>
+                                
+                                ${item.latLng ? `
+                                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.latLng)}" target="_blank" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors border border-blue-200">
+                                    <i class="fa-solid fa-map"></i> นำทาง (Google Maps)
+                                </a>` : ''}
                             </div>
                         </div>
+
+                        <!-- หมายเหตุ -->
                         ${item.notes ? `
                         <div class="pt-3 border-t border-slate-100 flex items-start">
                             <i class="fa-regular fa-comment-dots w-6 mt-0.5 text-amber-500"></i>
@@ -656,7 +744,7 @@
                         ` : ''}
                     </div>
                     <div class="bg-slate-50 px-5 py-3 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center rounded-b-2xl">
-                        <span><i class="fa-regular fa-clock mr-1"></i> ข้อมูล ณ วันที่: ${item.lastUpdated || '-'}</span>
+                        <span><i class="fa-regular fa-clock mr-1"></i> อัปเดต: ${item.lastUpdated || '-'}</span>
                     </div>
                 `;
                 container.appendChild(card);
@@ -664,7 +752,7 @@
         }
 
         // ==========================================
-        // 5. ADMIN AUTHENTICATION
+        // 5. ADMIN AUTHENTICATION & PANEL
         // ==========================================
         async function handleLogin(e) {
             e.preventDefault();
@@ -710,7 +798,6 @@
             const pass = document.getElementById('newAdminPass').value;
             
             const res = await fetchAPI('addAdmin', { user, pass });
-            
             if(res.status === 'success') {
                 Swal.fire('สำเร็จ', `สร้างบัญชีแอดมินใหม่แล้ว`, 'success');
                 document.getElementById('newAdminUser').value = '';
@@ -720,13 +807,9 @@
             }
         }
 
-        // ==========================================
-        // 6. ADMIN PANEL CONTROLS
-        // ==========================================
         async function toggleSurveyStatus() {
             const toggle = document.getElementById('toggleSurvey');
             isSurveyOpen = toggle.checked;
-            
             const res = await fetchAPI('toggleSurvey', { isOpen: isSurveyOpen });
             
             if(res.status === 'success') {
@@ -792,9 +875,9 @@
 
             document.getElementById('recordId').value = record.id;
             
+            // ข้อมูลหน่วยงาน
             const typeSelect = document.getElementById('agencyType');
             const otherInput = document.getElementById('agencyTypeOther');
-            
             if(record.agencyType.startsWith('อื่นๆ')) {
                 typeSelect.value = 'อื่นๆ';
                 const match = record.agencyType.match(/\((.*?)\)/); 
@@ -804,13 +887,25 @@
                 otherInput.value = '';
             }
             toggleOtherTypeInput();
-
             document.getElementById('agencyName').value = record.agencyName;
             document.getElementById('agencyPhone').value = record.agencyPhone;
+
+            // ข้อมูลที่ตั้ง
+            document.getElementById('building').value = record.building || '';
+            document.getElementById('floorRoom').value = record.floorRoom || '';
+            document.getElementById('houseNo').value = record.houseNo || '';
+            document.getElementById('moo').value = record.moo || '';
+            document.getElementById('subDistrict').value = record.subDistrict || '';
+            document.getElementById('district').value = record.district || 'บ้านนาสาร';
+            document.getElementById('province').value = record.province || 'สุราษฎร์ธานี';
+            document.getElementById('zipCode').value = record.zipCode || '84120';
+            document.getElementById('latLng').value = record.latLng || '';
+
+            // ข้อมูลบุคคล
             document.getElementById('headName').value = record.headName;
             document.getElementById('headTitle').value = record.headTitle;
             document.getElementById('headMobile').value = record.headMobile;
-            document.getElementById('notes').value = record.notes;
+            document.getElementById('notes').value = record.notes || '';
             document.getElementById('submitterName').value = record.submitterName;
             document.getElementById('submitterTitle').value = record.submitterTitle;
             document.getElementById('submitterPhone').value = record.submitterPhone;
