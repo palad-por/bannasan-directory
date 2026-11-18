@@ -173,14 +173,22 @@
                                 <label class="block text-sm font-medium text-slate-700 mb-1">จังหวัด</label>
                                 <input type="text" id="province" value="สุราษฎร์ธานี" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all bg-slate-50">
                             </div>
+                            
+                            <!-- ปรับช่องรหัสไปรษณีย์ ละติจูด และ ลองจิจูด ให้อยู่แถวเดียวกัน -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">รหัสไปรษณีย์</label>
                                 <input type="text" id="zipCode" value="84120" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all bg-slate-50">
                             </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">พิกัดแผนที่ (ละติจูด, ลองจิจูด)</label>
-                                <input type="text" id="latLng" placeholder="เช่น 8.7981, 99.3638 (หาได้จาก Google Maps)" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
-                                <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-circle-info"></i> หากระบุพิกัด ระบบจะสร้างปุ่มนำทางให้อัตโนมัติ</p>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ละติจูด (Latitude)</label>
+                                <input type="text" id="latitude" placeholder="เช่น 8.7981" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ลองจิจูด (Longitude)</label>
+                                <input type="text" id="longitude" placeholder="เช่น 99.3638" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div class="md:col-span-3 -mt-2">
+                                <p class="text-xs text-slate-500"><i class="fa-solid fa-circle-info"></i> หากระบุพิกัดทั้งสองช่อง ระบบจะสร้างปุ่มนำทาง (Google Maps) ให้อัตโนมัติ</p>
                             </div>
                         </div>
                     </div>
@@ -546,6 +554,16 @@
             
             if (typeVal === 'อื่นๆ' && typeOther !== '') typeVal = `อื่นๆ (${typeOther})`;
 
+            // จัดการรวมพิกัดละติจูดและลองจิจูด
+            const lat = document.getElementById('latitude').value.trim();
+            const lng = document.getElementById('longitude').value.trim();
+            let combinedLatLng = '';
+            if (lat && lng) {
+                combinedLatLng = `${lat}, ${lng}`;
+            } else if (lat || lng) {
+                combinedLatLng = lat || lng; 
+            }
+
             const formData = {
                 id: idVal ? idVal : "", 
                 agencyType: typeVal,
@@ -561,7 +579,7 @@
                 district: document.getElementById('district').value.trim(),
                 province: document.getElementById('province').value.trim(),
                 zipCode: document.getElementById('zipCode').value.trim(),
-                latLng: document.getElementById('latLng').value.trim(),
+                latLng: combinedLatLng, // ส่งพิกัดที่รวมแล้วไปให้ Database
 
                 // ข้อมูลหัวหน้าหน่วยงาน และผู้แจ้ง
                 headName: document.getElementById('headName').value.trim(),
@@ -600,6 +618,8 @@
             document.getElementById('district').value = 'บ้านนาสาร';
             document.getElementById('province').value = 'สุราษฎร์ธานี';
             document.getElementById('zipCode').value = '84120';
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
             document.getElementById('btnSubmit').innerHTML = '<i class="fa-solid fa-save"></i> <span>บันทึกข้อมูล</span>';
             document.getElementById('btnCancelEdit').classList.add('hidden');
             toggleOtherTypeInput();
@@ -925,7 +945,16 @@
             document.getElementById('district').value = record.district || 'บ้านนาสาร';
             document.getElementById('province').value = record.province || 'สุราษฎร์ธานี';
             document.getElementById('zipCode').value = record.zipCode || '84120';
-            document.getElementById('latLng').value = record.latLng || '';
+            
+            // แยกค่าพิกัดมาลงช่อง 2 ช่องเมื่อกดแก้ไข
+            if(record.latLng) {
+                const parts = record.latLng.split(',');
+                document.getElementById('latitude').value = parts[0] ? parts[0].trim() : '';
+                document.getElementById('longitude').value = parts[1] ? parts[1].trim() : '';
+            } else {
+                document.getElementById('latitude').value = '';
+                document.getElementById('longitude').value = '';
+            }
 
             // ข้อมูลบุคคล
             document.getElementById('headName').value = record.headName;
