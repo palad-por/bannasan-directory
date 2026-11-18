@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบทำเนียบหน่วยงาน อำเภอบ้านนาสาร</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Prompt', 'sans-serif'], },
+                    colors: {
+                        primary: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; }
+        .loader {
+            border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #0284c7;
+            width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .toggle-checkbox:checked { right: 0; border-color: #10B981; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #10B981; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-primary-700 to-primary-500 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white text-primary-600 rounded-full w-10 h-10 flex items-center justify-center text-xl shadow-inner">
+                        <i class="fa-solid fa-building-flag"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg md:text-xl font-bold leading-tight">ทำเนียบหน่วยงาน</h1>
+                        <p class="text-xs md:text-sm text-primary-100">อำเภอบ้านนาสาร จังหวัดสุราษฎร์ธานี</p>
+                    </div>
+                </div>
+                <!-- ปุ่มเข้าหน้า Admin -->
+                <button onclick="switchView('admin-login')" class="text-xs sm:text-sm bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 border border-white/30">
+                    <i class="fa-solid fa-lock"></i> <span class="hidden sm:inline">สำหรับเจ้าหน้าที่</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 relative">
+        
+        <!-- ========================================== -->
+        <!-- 1. VIEW: FORM (หน้าสำรวจข้อมูล)            -->
+        <!-- ========================================== -->
+        <section id="view-form" class="max-w-3xl mx-auto block transition-all duration-300">
+            
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-700">
+                    <i class="fa-solid fa-clipboard-list text-primary-500 mr-2"></i> บันทึกข้อมูลหน่วยงาน
+                </h2>
+                <button onclick="switchView('dashboard')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line"></i> <span class="hidden sm:inline">ไปหน้าแดชบอร์ด</span>
+                </button>
+            </div>
+
+            <!-- ข้อความเมื่อแบบสำรวจปิด -->
+            <div id="surveyClosedMsg" class="hidden bg-red-50 border border-red-200 text-red-700 p-8 rounded-2xl text-center shadow-sm">
+                <i class="fa-solid fa-lock text-5xl mb-4 opacity-50"></i>
+                <h3 class="text-xl font-bold mb-2">ปิดรับข้อมูลชั่วคราว</h3>
+                <p>ขณะนี้ระบบปิดรับข้อมูลจากหน่วยงาน หากมีข้อสงสัยโปรดติดต่อผู้ดูแลระบบ</p>
+            </div>
+
+            <div id="surveyFormContainer" class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+                <div class="bg-primary-50 px-6 py-4 border-b border-primary-100 text-primary-800 text-sm">
+                    <i class="fa-solid fa-circle-info mr-1"></i> กรุณากรอกข้อมูลให้ครบถ้วนเพื่อให้ฐานข้อมูลทำเนียบสมบูรณ์ที่สุด
+                </div>
+                
+                <form id="dataForm" class="p-6 sm:p-8 space-y-6" onsubmit="handleFormSubmit(event)">
+                    <input type="hidden" id="recordId">
+                    <!-- ส่วนที่ 1: ข้อมูลหน่วยงาน -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
+                            <i class="fa-solid fa-sitemap text-slate-400 mr-2"></i>ข้อมูลหน่วยงาน
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ประเภทหน่วยงาน <span class="text-red-500">*</span></label>
+                                <select id="agencyType" required onchange="toggleOtherTypeInput()" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                    <option value="">-- เลือกประเภทหน่วยงาน --</option>
+                                    <option value="หน่วยงานราชการ/ส่วนราชการ">1. หน่วยงานราชการ/ส่วนราชการ</option>
+                                    <option value="หน่วยงานรัฐวิสาหกิจ">2. หน่วยงานรัฐวิสาหกิจ</option>
+                                    <option value="องค์กรปกครองส่วนท้องถิ่น">3. องค์กรปกครองส่วนท้องถิ่น</option>
+                                    <option value="โรงเรียน/สถานศึกษา">4. โรงเรียน/สถานศึกษา</option>
+                                    <option value="หน่วยงานส่วนกลาง/จังหวัดที่มีผู้ประสานงานระดับอำเภอ">5. หน่วยงานส่วนกลาง/จังหวัดที่มีผู้ประสานงานระดับอำเภอ</option>
+                                    <option value="ที่ทำการกำนันและผู้ใหญ่บ้าน">6. ที่ทำการกำนันและผู้ใหญ่บ้าน</option>
+                                    <option value="สภาองค์กรปกครองส่วนท้องถิ่น">7. สภาองค์กรปกครองส่วนท้องถิ่น</option>
+                                    <option value="อื่นๆ">8. หน่วยงานประเภทอื่นๆ (ระบุ)</option>
+                                </select>
+                            </div>
+
+                            <div id="otherTypeContainer" class="hidden md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ระบุประเภทหน่วยงาน <span class="text-red-500">*</span></label>
+                                <input type="text" id="agencyTypeOther" placeholder="ระบุประเภทหน่วยงานของคุณ" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อหน่วยงาน <span class="text-red-500">*</span></label>
+                                <input type="text" id="agencyName" required placeholder="เช่น ที่ว่าการอำเภอบ้านนาสาร, เทศบาลเมืองนาสาร" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">หมายเลขโทรศัพท์ของหน่วยงาน <span class="text-red-500">*</span></label>
+                                <input type="tel" id="agencyPhone" required placeholder="เช่น 077-xxx-xxx" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ส่วนที่ 2: ข้อมูลหัวหน้าหน่วยงาน -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
+                            <i class="fa-solid fa-user-tie text-slate-400 mr-2"></i>ข้อมูลหัวหน้าหน่วยงาน
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อ-สกุล หัวหน้าหน่วยงาน <span class="text-red-500">*</span></label>
+                                <input type="text" id="headName" required placeholder="เช่น นายอำเภอ บ้านนาสาร" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ตำแหน่ง <span class="text-red-500">*</span></label>
+                                <input type="text" id="headTitle" required placeholder="เช่น นายอำเภอ, นายกเทศมนตรี" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">หมายเลขโทรศัพท์มือถือ <span class="text-red-500">*</span></label>
+                                <input type="tel" id="headMobile" required placeholder="เช่น 08x-xxx-xxxx" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุการติดต่อ (ถ้ามี)</label>
+                                <textarea id="notes" rows="2" placeholder="เช่น โปรดติดต่อในเวลาราชการ, หรือเฉพาะกรณีฉุกเฉิน" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ส่วนที่ 3: ข้อมูลผู้แจ้ง -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <h3 class="text-sm font-semibold text-slate-800 mb-3">
+                            <i class="fa-solid fa-pen-to-square text-slate-400 mr-2"></i>ข้อมูลผู้แจ้ง (สำหรับอ้างอิง ไม่แสดงในแดชบอร์ด)
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">ชื่อ-สกุล ผู้แจ้ง <span class="text-red-500">*</span></label>
+                                <input type="text" id="submitterName" required class="w-full px-3 py-2 text-sm rounded-md border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">ตำแหน่ง ผู้แจ้ง <span class="text-red-500">*</span></label>
+                                <input type="text" id="submitterTitle" required class="w-full px-3 py-2 text-sm rounded-md border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">เบอร์โทร ผู้แจ้ง <span class="text-red-500">*</span></label>
+                                <input type="tel" id="submitterPhone" required class="w-full px-3 py-2 text-sm rounded-md border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-200 flex justify-end gap-3">
+                        <!-- ปุ่มยกเลิก ซ่อนไว้ จะแสดงเมื่อเป็นการแก้ไขผ่าน Admin -->
+                        <button type="button" id="btnCancelEdit" onclick="cancelEdit()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-lg shadow-sm transition-all text-lg">
+                            ยกเลิก
+                        </button>
+                        <button type="submit" id="btnSubmit" class="w-full md:w-auto bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-all flex items-center justify-center gap-2 text-lg">
+                            <i class="fa-solid fa-save"></i> <span>บันทึกข้อมูล</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 2. VIEW: DASHBOARD (หน้าแดชบอร์ด)          -->
+        <!-- ========================================== -->
+        <section id="view-dashboard" class="hidden transition-all duration-300">
+            
+            <div class="mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mb-2">
+                    <i class="fa-solid fa-address-book text-primary-500 mr-2"></i> ทำเนียบข้อมูลการติดต่อ
+                </h2>
+                <p class="text-slate-500">ค้นหาและดูข้อมูลการติดต่อหน่วยงานภายในอำเภอบ้านนาสาร</p>
+            </div>
+
+            <!-- เครื่องมือค้นหา -->
+            <div class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- ประเภทหน่วยงาน -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">ประเภทหน่วยงาน</label>
+                        <div class="relative">
+                            <select id="filterType" onchange="filterDashboard()" class="w-full appearance-none pl-4 pr-10 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <option value="">-- ทุกประเภท --</option>
+                                <option value="หน่วยงานราชการ/ส่วนราชการ">หน่วยงานราชการ/ส่วนราชการ</option>
+                                <option value="หน่วยงานรัฐวิสาหกิจ">หน่วยงานรัฐวิสาหกิจ</option>
+                                <option value="องค์กรปกครองส่วนท้องถิ่น">องค์กรปกครองส่วนท้องถิ่น</option>
+                                <option value="โรงเรียน/สถานศึกษา">โรงเรียน/สถานศึกษา</option>
+                                <option value="หน่วยงานส่วนกลาง/จังหวัดที่มีผู้ประสานงานระดับอำเภอ">หน่วยงานส่วนกลาง/จังหวัดที่มีผู้ประสานงานระดับอำเภอ</option>
+                                <option value="ที่ทำการกำนันและผู้ใหญ่บ้าน">ที่ทำการกำนันและผู้ใหญ่บ้าน</option>
+                                <option value="สภาองค์กรปกครองส่วนท้องถิ่น">สภาองค์กรปกครองส่วนท้องถิ่น</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- เลือกชื่อหน่วยงาน -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">ชื่อหน่วยงาน</label>
+                        <div class="relative">
+                            <select id="searchDropdown" onchange="filterDashboard()" class="w-full appearance-none pl-4 pr-10 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <option value="">-- ทั้งหมด --</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- พิมพ์ค้นหา Text -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">พิมพ์ค้นหา</label>
+                        <div class="relative">
+                            <input type="text" id="searchInput" onkeyup="filterDashboard()" placeholder="ชื่อ, ตำแหน่ง, เบอร์โทร..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                <i class="fa-solid fa-search"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="text-center py-12 hidden">
+                <div class="loader mb-4"></div>
+                <p class="text-slate-500">กำลังโหลดข้อมูล...</p>
+            </div>
+
+            <!-- แสดงผลข้อมูลแบบ Card Grid -->
+            <div id="dataContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- ข้อมูลถูก render ที่นี่ -->
+            </div>
+            
+            <div id="noDataFound" class="hidden text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300 mt-4">
+                <i class="fa-regular fa-folder-open text-4xl text-slate-300 mb-3"></i>
+                <p class="text-slate-500 text-lg">ไม่พบข้อมูลที่ค้นหา</p>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 3. VIEW: ADMIN LOGIN                       -->
+        <!-- ========================================== -->
+        <section id="view-admin-login" class="hidden max-w-md mx-auto transition-all duration-300 pt-10">
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+                <div class="bg-slate-800 px-6 py-5 text-center">
+                    <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3 text-white text-2xl">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-white">ระบบจัดการผู้ดูแล</h2>
+                    <p class="text-slate-400 text-sm">เข้าสู่ระบบเพื่อจัดการข้อมูล</p>
+                </div>
+                <form class="p-6 sm:p-8 space-y-5" onsubmit="handleLogin(event)">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อผู้ใช้ (Username)</label>
+                        <input type="text" id="adminUser" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-800 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">รหัสผ่าน (Password)</label>
+                        <input type="password" id="adminPass" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-slate-800 outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3 rounded-lg shadow-md transition-all">
+                        เข้าสู่ระบบ
+                    </button>
+                    <div class="text-center mt-4">
+                        <button type="button" onclick="switchView('dashboard')" class="text-slate-500 hover:text-slate-700 text-sm underline">กลับสู่หน้าหลัก</button>
+                    </div>
+                    <div class="text-xs text-amber-600 bg-amber-50 p-2 rounded text-center mt-2 border border-amber-200">
+                        สำหรับทดสอบใช้: User = <b>admin</b> / Pass = <b>1234</b>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 4. VIEW: ADMIN PANEL                       -->
+        <!-- ========================================== -->
+        <section id="view-admin-panel" class="hidden transition-all duration-300">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-2xl md:text-3xl font-bold text-slate-800">
+                        <i class="fa-solid fa-shield-halved text-slate-700 mr-2"></i> แผงควบคุมผู้ดูแลระบบ
+                    </h2>
+                    <p class="text-slate-500">จัดการข้อมูลหน่วยงาน และบัญชีผู้ดูแล</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="switchView('dashboard')" class="bg-primary-50 text-primary-700 hover:bg-primary-100 px-4 py-2 rounded-lg font-medium transition-colors border border-primary-200">
+                        <i class="fa-solid fa-tv mr-1"></i> ดูแดชบอร์ด
+                    </button>
+                    <button onclick="switchView('form')" class="bg-primary-50 text-primary-700 hover:bg-primary-100 px-4 py-2 rounded-lg font-medium transition-colors border border-primary-200">
+                        <i class="fa-solid fa-plus mr-1"></i> เพิ่มข้อมูลเอง
+                    </button>
+                    <button onclick="handleLogout()" class="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-lg font-medium transition-colors border border-red-200">
+                        <i class="fa-solid fa-right-from-bracket mr-1"></i> ออกจากระบบ
+                    </button>
+                </div>
+            </div>
+
+            <!-- กล่องตั้งค่าระบบ & เพิ่มแอดมิน -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- เปิด-ปิดแบบสำรวจ -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-bold text-lg text-slate-800">สถานะแบบสำรวจ</h3>
+                        <p class="text-slate-500 text-sm">เปิด/ปิด ให้หน่วยงานทั่วไปเข้ามาบันทึกข้อมูล</p>
+                    </div>
+                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="toggleSurvey" onchange="toggleSurveyStatus()" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300" checked/>
+                        <label for="toggleSurvey" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer transition-colors duration-300"></label>
+                    </div>
+                </div>
+
+                <!-- สร้าง Admin (Mock) -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-lg text-slate-800 mb-3"><i class="fa-solid fa-user-plus mr-2"></i>เพิ่มผู้ดูแลระบบ (Admin)</h3>
+                    <form class="flex gap-2" onsubmit="handleAddAdmin(event)">
+                        <input type="text" id="newAdminUser" placeholder="Username" required class="w-1/3 px-3 py-2 rounded-lg border border-slate-300 outline-none text-sm">
+                        <input type="password" id="newAdminPass" placeholder="Password" required class="w-1/3 px-3 py-2 rounded-lg border border-slate-300 outline-none text-sm">
+                        <button type="submit" class="w-1/3 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition-colors">
+                            สร้างบัญชี
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ตารางจัดการข้อมูล -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <h3 class="font-bold text-lg text-slate-800">ฐานข้อมูลหน่วยงาน (<span id="adminDataCount">0</span> รายการ)</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
+                                <th class="px-4 py-3 font-semibold w-16 text-center">ลำดับ</th>
+                                <th class="px-4 py-3 font-semibold">หน่วยงาน</th>
+                                <th class="px-4 py-3 font-semibold">ประเภท</th>
+                                <th class="px-4 py-3 font-semibold">ผู้ให้ข้อมูล</th>
+                                <th class="px-4 py-3 font-semibold">อัปเดตล่าสุด</th>
+                                <th class="px-4 py-3 font-semibold text-center w-32">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody" class="divide-y divide-slate-200 text-sm">
+                            <!-- ข้อมูลตารางจะถูก render ด้วย JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 py-6 text-center text-sm mt-auto">
+        <p>&copy; ระบบทำเนียบหน่วยงาน อำเภอบ้านนาสาร จ.สุราษฎร์ธานี</p>
+        <p class="text-xs mt-1 opacity-60">ระบบจัดการข้อมูล | ขับเคลื่อนด้วย Google Apps Script & GitHub Pages</p>
+    </footer>
+
+    <script>
+        // ==========================================
+        // 1. API & STATE CONFIGURATION
+        // ==========================================
+        // !!! เอา URL ที่ได้จากการ Deploy Web App มาใส่ตรงนี้ !!!
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymepcbK7XCxBkEQ2QgWWW-0cfJi4wf0RQD6x1fNIvtXs_7i0DxTusNkZGykcW-CF3vjQ/exec'; 
+        
+        function getCurrentThaiDate() {
+            return new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        let isSurveyOpen = true; 
+        let isLoggedIn = false;  
+        let allAgencies = []; 
+
+        // ฟังก์ชันกลางสำหรับเรียก Google Apps Script API
+        async function fetchAPI(action, payload = null) {
+            try {
+                const options = {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload ? { action, ...payload } : { action })
+                };
+                const res = await fetch(SCRIPT_URL, options);
+                return await res.json();
+            } catch (error) {
+                console.error("API Error:", error);
+                return { status: 'error', message: error.message };
+            }
+        }
+
+        // ==========================================
+        // 2. VIEW CONTROLLER
+        // ==========================================
+        function switchView(view) {
+            const views = ['view-form', 'view-dashboard', 'view-admin-login', 'view-admin-panel'];
+            
+            if(view === 'admin-panel' && !isLoggedIn) {
+                view = 'admin-login';
+            }
+
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById(`view-${view}`).classList.remove('hidden');
+
+            if (view === 'dashboard') {
+                loadDashboardData();
+            } else if (view === 'form') {
+                checkSurveyStatus();
+                if(!document.getElementById('recordId').value) resetFormState();
+            } else if (view === 'admin-panel') {
+                renderAdminTable();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ==========================================
+        // 3. FORM & DATA ENTRY
+        // ==========================================
+        function toggleOtherTypeInput() {
+            const type = document.getElementById('agencyType').value;
+            const container = document.getElementById('otherTypeContainer');
+            const otherInput = document.getElementById('agencyTypeOther');
+            if (type === 'อื่นๆ') {
+                container.classList.remove('hidden');
+                otherInput.setAttribute('required', 'true');
+            } else {
+                container.classList.add('hidden');
+                otherInput.removeAttribute('required');
+                otherInput.value = '';
+            }
+        }
+
+        function checkSurveyStatus() {
+            const formContainer = document.getElementById('surveyFormContainer');
+            const closedMsg = document.getElementById('surveyClosedMsg');
+            
+            if(isSurveyOpen || isLoggedIn) {
+                formContainer.classList.remove('hidden');
+                closedMsg.classList.add('hidden');
+            } else {
+                formContainer.classList.add('hidden');
+                closedMsg.classList.remove('hidden');
+            }
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            if(!isSurveyOpen && !isLoggedIn) {
+                Swal.fire('ระบบปิดรับข้อมูล', 'ขณะนี้ไม่สามารถส่งข้อมูลได้', 'error');
+                return;
+            }
+
+            const idVal = document.getElementById('recordId').value;
+            let typeVal = document.getElementById('agencyType').value;
+            const typeOther = document.getElementById('agencyTypeOther').value.trim();
+            
+            if (typeVal === 'อื่นๆ' && typeOther !== '') typeVal = `อื่นๆ (${typeOther})`;
+
+            const formData = {
+                id: idVal ? idVal : "", // ถ้าแก้จะมี id, ถ้าเพิ่มใหม่จะว่าง
+                agencyType: typeVal,
+                agencyName: document.getElementById('agencyName').value.trim(),
+                agencyPhone: document.getElementById('agencyPhone').value.trim(),
+                headName: document.getElementById('headName').value.trim(),
+                headTitle: document.getElementById('headTitle').value.trim(),
+                headMobile: document.getElementById('headMobile').value.trim(),
+                notes: document.getElementById('notes').value.trim(),
+                submitterName: document.getElementById('submitterName').value.trim(),
+                submitterTitle: document.getElementById('submitterTitle').value.trim(),
+                submitterPhone: document.getElementById('submitterPhone').value.trim(),
+                lastUpdated: getCurrentThaiDate()
+            };
+
+            const btnSubmit = document.getElementById('btnSubmit');
+            const originalBtnText = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = `<div class="loader border-t-white mr-2 w-5 h-5 border-2"></div> กำลังบันทึก...`;
+            btnSubmit.disabled = true;
+
+            const res = await fetchAPI('saveData', { payload: formData });
+
+            if(res.status === 'success') {
+                Swal.fire('สำเร็จ', idVal ? 'แก้ไขข้อมูลเรียบร้อยแล้ว' : 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success').then(() => {
+                    resetFormState();
+                    if(isLoggedIn) switchView('admin-panel'); 
+                });
+            } else {
+                Swal.fire('เกิดข้อผิดพลาด', res.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+            }
+
+            btnSubmit.innerHTML = originalBtnText;
+            btnSubmit.disabled = false;
+        }
+
+        function resetFormState() {
+            document.getElementById('dataForm').reset();
+            document.getElementById('recordId').value = '';
+            document.getElementById('btnSubmit').innerHTML = '<i class="fa-solid fa-save"></i> <span>บันทึกข้อมูล</span>';
+            document.getElementById('btnCancelEdit').classList.add('hidden');
+            toggleOtherTypeInput();
+        }
+
+        function cancelEdit() {
+            resetFormState();
+            switchView('admin-panel');
+        }
+
+        // ==========================================
+        // 4. DASHBOARD
+        // ==========================================
+        async function loadDashboardData() {
+            const container = document.getElementById('dataContainer');
+            const loading = document.getElementById('loadingState');
+            
+            container.innerHTML = '';
+            loading.classList.remove('hidden');
+            document.getElementById('noDataFound').classList.add('hidden');
+
+            const res = await fetchAPI('getData');
+            
+            if (res.status === 'success') {
+                allAgencies = res.data || [];
+                isSurveyOpen = res.isSurveyOpen;
+                document.getElementById('toggleSurvey').checked = isSurveyOpen;
+                
+                allAgencies.sort((a, b) => a.agencyName.localeCompare(b.agencyName, 'th'));
+                populateDropdown(allAgencies);
+                filterDashboard(); 
+            } else {
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error');
+            }
+            
+            loading.classList.add('hidden');
+        }
+
+        function populateDropdown(data) {
+            const dropdown = document.getElementById('searchDropdown');
+            const currentValue = dropdown.value;
+            const uniqueAgencies = [...new Set(data.map(item => item.agencyName))];
+            
+            let optionsHTML = '<option value="">-- ชื่อหน่วยงานทั้งหมด --</option>';
+            uniqueAgencies.forEach(agency => optionsHTML += `<option value="${agency}">${agency}</option>`);
+            
+            dropdown.innerHTML = optionsHTML;
+            dropdown.value = currentValue || ''; 
+        }
+
+        function filterDashboard() {
+            const filterType = document.getElementById('filterType').value;
+            const dropdownVal = document.getElementById('searchDropdown').value;
+            const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            const filteredData = allAgencies.filter(item => {
+                let matchType = true;
+                if(filterType === "อื่นๆ") matchType = item.agencyType.startsWith("อื่นๆ");
+                else if(filterType !== "") matchType = item.agencyType === filterType;
+                
+                const matchDropdown = dropdownVal === "" || item.agencyName === dropdownVal;
+                const searchString = `${item.agencyName} ${item.headName} ${item.headTitle} ${item.agencyPhone} ${item.headMobile} ${item.agencyType}`.toLowerCase();
+                const matchSearch = searchString.includes(searchVal);
+                
+                return matchType && matchDropdown && matchSearch;
+            });
+            
+            renderCards(filteredData);
+        }
+
+        function renderCards(data) {
+            const container = document.getElementById('dataContainer');
+            const noData = document.getElementById('noDataFound');
+            container.innerHTML = '';
+            
+            if (data.length === 0) {
+                noData.classList.remove('hidden');
+                return;
+            }
+            noData.classList.add('hidden');
+
+            data.forEach(item => {
+                let badgeColor = 'bg-primary-100 text-primary-800';
+                if(item.agencyType.includes('ราชการ')) badgeColor = 'bg-blue-100 text-blue-800';
+                if(item.agencyType.includes('ท้องถิ่น')) badgeColor = 'bg-emerald-100 text-emerald-800';
+                if(item.agencyType.includes('โรงเรียน')) badgeColor = 'bg-orange-100 text-orange-800';
+                if(item.agencyType.includes('วิสาหกิจ')) badgeColor = 'bg-purple-100 text-purple-800';
+
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow overflow-hidden flex flex-col relative';
+                
+                card.innerHTML = `
+                    <div class="bg-slate-50 px-5 py-4 border-b border-slate-200">
+                        <span class="inline-block px-2 py-1 rounded text-[10px] font-semibold tracking-wide mb-2 ${badgeColor}">${item.agencyType}</span>
+                        <h3 class="font-bold text-lg text-slate-800 line-clamp-2" title="${item.agencyName}">${item.agencyName}</h3>
+                        <div class="flex items-center text-slate-600 mt-2 text-sm">
+                            <i class="fa-solid fa-phone w-5 text-primary-500"></i>
+                            <a href="tel:${item.agencyPhone}" class="hover:text-primary-600 font-medium">${item.agencyPhone}</a>
+                        </div>
+                    </div>
+                    <div class="p-5 flex-grow space-y-4">
+                        <div class="flex items-start">
+                            <i class="fa-solid fa-user-tie w-6 mt-1 text-slate-400"></i>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-0.5">หัวหน้าหน่วยงาน</p>
+                                <p class="font-medium text-slate-800">${item.headName}</p>
+                                <p class="text-sm text-slate-600">${item.headTitle}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fa-solid fa-mobile-screen-button w-6 text-slate-400"></i>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-0.5">มือถือส่วนตัว</p>
+                                <a href="tel:${item.headMobile}" class="font-medium text-slate-800 hover:text-primary-600">${item.headMobile}</a>
+                            </div>
+                        </div>
+                        ${item.notes ? `
+                        <div class="pt-3 border-t border-slate-100 flex items-start">
+                            <i class="fa-regular fa-comment-dots w-6 mt-0.5 text-amber-500"></i>
+                            <div>
+                                <p class="text-xs text-slate-500 mb-0.5">หมายเหตุการติดต่อ</p>
+                                <p class="text-sm text-slate-700">${item.notes}</p>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="bg-slate-50 px-5 py-3 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center rounded-b-2xl">
+                        <span><i class="fa-regular fa-clock mr-1"></i> ข้อมูล ณ วันที่: ${item.lastUpdated || '-'}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // ==========================================
+        // 5. ADMIN AUTHENTICATION
+        // ==========================================
+        async function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('adminUser').value;
+            const pass = document.getElementById('adminPass').value;
+            
+            const btn = e.target.querySelector('button[type="submit"]');
+            const origTxt = btn.innerText;
+            btn.innerText = 'กำลังตรวจสอบ...';
+            btn.disabled = true;
+
+            const res = await fetchAPI('login', { user, pass });
+            
+            if(res.status === 'success' && res.isValid) {
+                isLoggedIn = true;
+                Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ', showConfirmButton: false, timer: 1000 });
+                document.getElementById('adminUser').value = '';
+                document.getElementById('adminPass').value = '';
+                switchView('admin-panel');
+            } else {
+                Swal.fire('เข้าสู่ระบบล้มเหลว', 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error');
+            }
+            
+            btn.innerText = origTxt;
+            btn.disabled = false;
+        }
+
+        function handleLogout() {
+            Swal.fire({
+                title: 'ยืนยันการออกจากระบบ?', icon: 'question', showCancelButton: true,
+                confirmButtonText: 'ออกจากระบบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#ef4444'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    isLoggedIn = false;
+                    switchView('dashboard');
+                }
+            });
+        }
+
+        async function handleAddAdmin(e) {
+            e.preventDefault();
+            const user = document.getElementById('newAdminUser').value;
+            const pass = document.getElementById('newAdminPass').value;
+            
+            const res = await fetchAPI('addAdmin', { user, pass });
+            
+            if(res.status === 'success') {
+                Swal.fire('สำเร็จ', `สร้างบัญชีแอดมินใหม่แล้ว`, 'success');
+                document.getElementById('newAdminUser').value = '';
+                document.getElementById('newAdminPass').value = '';
+            } else {
+                Swal.fire('ข้อผิดพลาด', res.message, 'error');
+            }
+        }
+
+        // ==========================================
+        // 6. ADMIN PANEL CONTROLS
+        // ==========================================
+        async function toggleSurveyStatus() {
+            const toggle = document.getElementById('toggleSurvey');
+            isSurveyOpen = toggle.checked;
+            
+            const res = await fetchAPI('toggleSurvey', { isOpen: isSurveyOpen });
+            
+            if(res.status === 'success') {
+                Swal.fire({
+                    icon: 'info', title: 'อัปเดตสถานะ', text: isSurveyOpen ? 'ระบบเปิดรับข้อมูลแล้ว' : 'ระบบปิดรับข้อมูลแล้ว',
+                    toast: true, position: 'top-end', showConfirmButton: false, timer: 2000
+                });
+            } else {
+                toggle.checked = !isSurveyOpen; // revert
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเปลี่ยนสถานะได้', 'error');
+            }
+        }
+
+        async function renderAdminTable() {
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500"><div class="loader mr-2 w-5 h-5 border-2 border-t-slate-500"></div> กำลังโหลดข้อมูลจากฐานข้อมูล...</td></tr>`;
+            
+            const res = await fetchAPI('getData');
+            if(res.status === 'success') {
+                allAgencies = res.data || [];
+                document.getElementById('adminDataCount').innerText = allAgencies.length;
+                tbody.innerHTML = '';
+                
+                if(allAgencies.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">ไม่มีข้อมูลในระบบ</td></tr>`;
+                    return;
+                }
+
+                allAgencies.forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition-colors';
+                    tr.innerHTML = `
+                        <td class="px-4 py-3 text-center">${index + 1}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-medium text-slate-800">${item.agencyName}</div>
+                            <div class="text-xs text-slate-500">${item.agencyPhone}</div>
+                        </td>
+                        <td class="px-4 py-3"><span class="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">${item.agencyType}</span></td>
+                        <td class="px-4 py-3">
+                            <div class="text-sm">${item.submitterName}</div>
+                            <div class="text-xs text-slate-500">${item.submitterPhone}</div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="text-xs text-slate-600 bg-slate-100 inline-block px-2 py-1 rounded-md border border-slate-200">
+                                <i class="fa-regular fa-clock mr-1"></i> ${item.lastUpdated || '-'}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-center space-x-1">
+                            <button onclick="editRecord('${item.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteRecord('${item.id}')" class="text-red-600 hover:bg-red-50 p-2 rounded transition-colors" title="ลบ"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+            }
+        }
+
+        function editRecord(id) {
+            const record = allAgencies.find(r => r.id == id);
+            if(!record) return;
+
+            document.getElementById('recordId').value = record.id;
+            
+            const typeSelect = document.getElementById('agencyType');
+            const otherInput = document.getElementById('agencyTypeOther');
+            
+            if(record.agencyType.startsWith('อื่นๆ')) {
+                typeSelect.value = 'อื่นๆ';
+                const match = record.agencyType.match(/\((.*?)\)/); 
+                otherInput.value = match ? match[1] : '';
+            } else {
+                typeSelect.value = record.agencyType;
+                otherInput.value = '';
+            }
+            toggleOtherTypeInput();
+
+            document.getElementById('agencyName').value = record.agencyName;
+            document.getElementById('agencyPhone').value = record.agencyPhone;
+            document.getElementById('headName').value = record.headName;
+            document.getElementById('headTitle').value = record.headTitle;
+            document.getElementById('headMobile').value = record.headMobile;
+            document.getElementById('notes').value = record.notes;
+            document.getElementById('submitterName').value = record.submitterName;
+            document.getElementById('submitterTitle').value = record.submitterTitle;
+            document.getElementById('submitterPhone').value = record.submitterPhone;
+
+            document.getElementById('btnSubmit').innerHTML = '<i class="fa-solid fa-save"></i> <span>บันทึกการแก้ไข</span>';
+            document.getElementById('btnCancelEdit').classList.remove('hidden');
+
+            switchView('form');
+        }
+
+        function deleteRecord(id) {
+            Swal.fire({
+                title: 'ยืนยันการลบ?', text: "ข้อมูลนี้จะถูกลบออกจากระบบอย่างถาวร!", icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'ใช่, ลบเลย', cancelButtonText: 'ยกเลิก'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const res = await fetchAPI('deleteData', { id });
+                    if(res.status === 'success') {
+                        renderAdminTable();
+                        Swal.fire('ลบสำเร็จ!', 'ข้อมูลถูกลบออกจากระบบแล้ว.', 'success');
+                    } else {
+                        Swal.fire('ข้อผิดพลาด', res.message, 'error');
+                    }
+                }
+            });
+        }
+
+        ['agencyPhone', 'headMobile', 'submitterPhone'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.addEventListener('input', function() { this.value = this.value.replace(/[^0-9-]/g, ''); });
+        });
+
+        window.onload = () => {
+            if(window.location.hash === '#form') switchView('form');
+            else switchView('dashboard'); 
+        };
+    </script>
+</body>
+</html>
