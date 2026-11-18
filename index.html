@@ -125,7 +125,7 @@
 
                             <div id="otherTypeContainer" class="hidden md:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ระบุประเภทหน่วยงาน <span class="text-red-500">*</span></label>
-                                <input type="text" id="agencyTypeOther" placeholder="ระบุประเภทหน่วยงานของคุณ" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <input type="text" id="agencyTypeOther" placeholder="เช่น มูลนิธิ, สมาคม" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
                             </div>
 
                             <div class="md:col-span-2">
@@ -147,11 +147,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="md:col-span-3">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ชื่ออาคาร/สำนักงาน</label>
-                                <input type="text" id="building" placeholder="เช่น อาคารที่ว่าการอำเภอ (หลังใหม่)" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <input type="text" id="building" placeholder="เช่น ที่ว่าการอำเภอ (หลังใหม่)" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ชั้น / ห้อง</label>
-                                <input type="text" id="floorRoom" placeholder="เช่น ชั้น 2 ห้อง 201" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <input type="text" id="floorRoom" placeholder="เช่น 2 ห้อง 201" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">เลขที่</label>
@@ -159,17 +159,17 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">หมู่ที่</label>
-                                <input type="text" id="moo" placeholder="เช่น ม.1" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <input type="text" id="moo" placeholder="เช่น 1" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
                             </div>
                             
                             <!-- เพิ่มตรอก/ซอย และ ถนน -->
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ตรอก/ซอย</label>
-                                <input type="text" id="alley" placeholder="เช่น ซอย 1 หรือ ตรอกเจริญสุข" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <input type="text" id="alley" placeholder="เช่น 1 หรือ เจริญสุข" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ถนน</label>
-                                <input type="text" id="road" placeholder="เช่น ถนนเพชรเกษม" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <input type="text" id="road" placeholder="เช่น เพชรเกษม" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
                             </div>
 
                             <div>
@@ -747,7 +747,7 @@
                 if(item.building) addressArr.push(item.building);
                 if(item.floorRoom) addressArr.push(`ชั้น/ห้อง ${item.floorRoom}`);
                 if(item.houseNo) addressArr.push(`เลขที่ ${item.houseNo}`);
-                if(item.moo) addressArr.push(`หมู่ ${item.moo}`);
+                if(item.moo) addressArr.push(`หมู่ที่ ${item.moo}`); // <--- เปลี่ยน หมู่ เป็น หมู่ที่
                 if(item.alley) addressArr.push(`ซอย${item.alley}`);
                 if(item.road) addressArr.push(`ถนน${item.road}`);
                 if(item.subDistrict) addressArr.push(`ต.${item.subDistrict}`);
