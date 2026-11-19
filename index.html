@@ -469,21 +469,75 @@
 
             <!-- ตารางจัดการข้อมูล & ปุ่มส่งออก Excel / PDF -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <h3 class="font-bold text-lg text-slate-800">ฐานข้อมูลหน่วยงาน (<span id="adminDataCount">0</span> รายการ)</h3>
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="font-bold text-lg text-slate-800">ฐานข้อมูลหน่วยงาน (<span id="adminDataCount">0</span> รายการ)</h3>
+                        <span id="adminSelectionBadge" class="hidden text-xs font-semibold bg-primary-100 text-primary-700 px-2.5 py-1 rounded-full border border-primary-200">
+                            เลือกไว้ 0 แห่ง
+                        </span>
+                    </div>
                     <div class="flex flex-wrap gap-2">
+                        <button type="button" id="btnClearSelection" onclick="clearAdminSelection()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5">
+                            <i class="fa-solid fa-xmark"></i> ล้างที่เลือก
+                        </button>
                         <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
-                            <i class="fa-solid fa-file-excel"></i> ดาวน์โหลด Excel
+                            <i class="fa-solid fa-file-excel"></i> <span id="excelBtnText">ดาวน์โหลด Excel</span>
                         </button>
                         <button onclick="exportToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
-                            <i class="fa-solid fa-file-pdf"></i> พิมพ์ / ส่งออก PDF (A4)
+                            <i class="fa-solid fa-file-pdf"></i> <span id="pdfBtnText">พิมพ์ / ส่งออก PDF (A4)</span>
                         </button>
                     </div>
                 </div>
+
+                <!-- ตัวกรองข้อมูลก่อนส่งออก (Admin Filter Bar) -->
+                <div class="px-6 py-4 bg-white border-b border-slate-200 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">กรองตามประเภทหน่วยงาน</label>
+                            <select id="adminFilterType" onchange="filterAdminTable()" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none">
+                                <option value="">-- ทุกประเภท --</option>
+                                <option value="หน่วยงานราชการ/ส่วนราชการ">หน่วยงานราชการ/ส่วนราชการ</option>
+                                <option value="หน่วยงานรัฐวิสาหกิจ">หน่วยงานรัฐวิสาหกิจ</option>
+                                <option value="องค์กรปกครองส่วนท้องถิ่น">องค์กรปกครองส่วนท้องถิ่น</option>
+                                <option value="โรงเรียน/สถานศึกษา">โรงเรียน/สถานศึกษา</option>
+                                <option value="หน่วยงานส่วนกลาง/จังหวัดที่มีผู้ประสานงานระดับอำเภอ">หน่วยงานส่วนกลาง/จังหวัดที่มีผู้ประสานงานระดับอำเภอ</option>
+                                <option value="ที่ทำการกำนันและผู้ใหญ่บ้าน">ที่ทำการกำนันและผู้ใหญ่บ้าน</option>
+                                <option value="สภาองค์กรปกครองส่วนท้องถิ่น">สภาองค์กรปกครองส่วนท้องถิ่น</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">กรองตามตำบล</label>
+                            <select id="adminFilterSubDistrict" onchange="filterAdminTable()" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none">
+                                <option value="">-- ทุกตำบล --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">ค้นหาหน่วยงาน / หัวหน้า</label>
+                            <div class="relative">
+                                <input type="text" id="adminSearchInput" onkeyup="filterAdminTable()" placeholder="พิมพ์ชื่อหน่วยงาน, หัวหน้า, เบอร์โทร..." class="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none">
+                                <i class="fa-solid fa-search text-slate-400 text-xs absolute left-3 top-1/2 -translate-y-1/2"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-end">
+                            <button type="button" onclick="resetAdminFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-200 flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-rotate-left"></i> ล้างตัวกรอง
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500">
+                        <i class="fa-solid fa-circle-info text-primary-500 mr-1"></i>
+                        สามารถใช้ตัวกรองด้านบน หรือติ๊กเครื่องหมายถูก <i class="fa-regular fa-square-check mx-0.5"></i> เพื่อเลือกส่งออกเฉพาะบางหน่วยงานได้ (หากไม่ติ๊กเลือก ระบบจะส่งออกทั้งหมดตามตัวกรองที่แสดงอยู่)
+                    </p>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
+                                <th class="px-3 py-3 font-semibold w-10 text-center">
+                                    <input type="checkbox" id="adminSelectAll" onchange="toggleSelectAllAdmin(this.checked)" title="เลือกทั้งหมดที่แสดงอยู่" class="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer">
+                                </th>
                                 <th class="px-4 py-3 font-semibold w-16 text-center">ลำดับ</th>
                                 <th class="px-4 py-3 font-semibold">หน่วยงาน</th>
                                 <th class="px-4 py-3 font-semibold">หัวหน้าหน่วยงาน</th>
@@ -522,6 +576,8 @@
         let isSurveyOpen = true; 
         let isLoggedIn = false;  
         let allAgencies = []; 
+        let filteredAdminAgencies = []; // ข้อมูลหลังผ่านตัวกรองในหน้าแอดมิน
+        let selectedExportIds = new Set(); // เก็บ ID ของหน่วยงานที่ติ๊กเลือกสำหรับส่งออก
         let selectedPhotoBase64 = ''; // เก็บข้อมูลรูปภาพใหม่ที่ถูกย่อขนาดแล้ว
 
         async function fetchAPI(action, payload = null) {
@@ -1078,62 +1134,171 @@
 
         async function renderAdminTable() {
             const tbody = document.getElementById('adminTableBody');
-            tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500"><div class="loader mr-2 w-5 h-5 border-2 border-t-slate-500"></div> กำลังโหลดข้อมูลจากฐานข้อมูล...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-500"><div class="loader mr-2 w-5 h-5 border-2 border-t-slate-500"></div> กำลังโหลดข้อมูลจากฐานข้อมูล...</td></tr>`;
             
             const res = await fetchAPI('getData');
             if(res.status === 'success') {
                 allAgencies = res.data || [];
                 isSurveyOpen = res.isSurveyOpen;
                 document.getElementById('toggleSurvey').checked = isSurveyOpen;
-                document.getElementById('adminDataCount').innerText = allAgencies.length;
-                tbody.innerHTML = '';
-                
-                if(allAgencies.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">ไม่มีข้อมูลในระบบ</td></tr>`;
-                    return;
-                }
 
-                allAgencies.forEach((item, index) => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-50 transition-colors';
-                    const avatarHtml = item.headPhoto
-                        ? `<img src="${escapeHTML(item.headPhoto)}" class="w-9 h-10 rounded-lg object-cover border border-slate-200 shrink-0" onerror="this.style.display='none'">`
-                        : `<div class="w-9 h-10 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-user-tie"></i></div>`;
-
-                    tr.innerHTML = `
-                        <td class="px-4 py-3 text-center">${index + 1}</td>
-                        <td class="px-4 py-3">
-                            <div class="font-medium text-slate-800">${escapeHTML(item.agencyName)}</div>
-                            <div class="text-xs text-slate-500">${escapeHTML(item.agencyPhone)}</div>
-                        </td>
-                        <td class="px-4 py-3">
-                            <div class="flex items-center gap-2.5">
-                                ${avatarHtml}
-                                <div>
-                                    <div class="font-medium text-slate-800 text-xs sm:text-sm">${escapeHTML(item.headName)}</div>
-                                    <div class="text-xs text-slate-500">${escapeHTML(item.headMobile)}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3"><span class="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">${escapeHTML(item.agencyType)}</span></td>
-                        <td class="px-4 py-3">
-                            <div class="text-sm">${escapeHTML(item.submitterName)}</div>
-                            <div class="text-xs text-slate-500">${escapeHTML(item.submitterPhone)}</div>
-                        </td>
-                        <td class="px-4 py-3">
-                            <div class="text-xs text-slate-600 bg-slate-100 inline-block px-2 py-1 rounded-md border border-slate-200">
-                                <i class="fa-regular fa-clock mr-1"></i> ${escapeHTML(item.lastUpdated || '-')}
-                            </div>
-                        </td>
-                        <td class="px-4 py-3 text-center space-x-1">
-                            <button onclick="editRecord('${escapeHTML(item.id)}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteRecord('${escapeHTML(item.id)}')" class="text-red-600 hover:bg-red-50 p-2 rounded transition-colors" title="ลบ"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
+                // ลบ ID ที่ไม่มีอยู่แล้วออกจากรายการที่เลือกไว้ (กรณีเพิ่งลบข้อมูล)
+                const validIds = new Set(allAgencies.map(item => String(item.id)));
+                selectedExportIds.forEach(id => {
+                    if (!validIds.has(id)) selectedExportIds.delete(id);
                 });
+
+                populateAdminSubDistrictDropdown(allAgencies);
+                filterAdminTable();
             } else {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+            }
+        }
+
+        function populateAdminSubDistrictDropdown(data) {
+            const dropdown = document.getElementById('adminFilterSubDistrict');
+            if (!dropdown) return;
+            const currentValue = dropdown.value;
+            const uniqueSubDistricts = [...new Set(data.map(item => item.subDistrict).filter(sub => sub && sub.trim() !== ''))];
+            uniqueSubDistricts.sort((a, b) => a.localeCompare(b, 'th'));
+
+            let optionsHTML = '<option value="">-- ทุกตำบล --</option>';
+            uniqueSubDistricts.forEach(sub => optionsHTML += `<option value="${escapeHTML(sub)}">${escapeHTML(sub)}</option>`);
+
+            dropdown.innerHTML = optionsHTML;
+            dropdown.value = uniqueSubDistricts.includes(currentValue) ? currentValue : '';
+        }
+
+        function filterAdminTable() {
+            const tbody = document.getElementById('adminTableBody');
+            const filterType = document.getElementById('adminFilterType').value;
+            const filterSubDist = document.getElementById('adminFilterSubDistrict').value;
+            const searchVal = document.getElementById('adminSearchInput').value.toLowerCase().trim();
+
+            filteredAdminAgencies = allAgencies.filter(item => {
+                let matchType = true;
+                if (filterType === 'อื่นๆ') matchType = (item.agencyType || '').startsWith('อื่นๆ');
+                else if (filterType !== '') matchType = item.agencyType === filterType;
+
+                const matchSubDist = filterSubDist === '' || item.subDistrict === filterSubDist;
+                const searchString = `${item.agencyName} ${item.headName} ${item.headTitle} ${item.agencyPhone} ${item.headMobile} ${item.agencyType} ${item.subDistrict} ${item.submitterName}`.toLowerCase();
+                const matchSearch = searchString.includes(searchVal);
+
+                return matchType && matchSubDist && matchSearch;
+            });
+
+            const countEl = document.getElementById('adminDataCount');
+            countEl.innerText = filteredAdminAgencies.length === allAgencies.length
+                ? `${allAgencies.length}`
+                : `${filteredAdminAgencies.length} / ${allAgencies.length}`;
+
+            tbody.innerHTML = '';
+
+            if (filteredAdminAgencies.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-500">ไม่พบข้อมูลตามเงื่อนไขที่ค้นหา</td></tr>`;
+                updateAdminExportControls();
+                return;
+            }
+
+            filteredAdminAgencies.forEach((item, index) => {
+                const itemId = String(item.id);
+                const isChecked = selectedExportIds.has(itemId);
+                const tr = document.createElement('tr');
+                tr.className = isChecked ? 'bg-primary-50/50 hover:bg-primary-50 transition-colors' : 'hover:bg-slate-50 transition-colors';
+
+                const avatarHtml = item.headPhoto
+                    ? `<img src="${escapeHTML(item.headPhoto)}" class="w-9 h-10 rounded-lg object-cover border border-slate-200 shrink-0" onerror="this.style.display='none'">`
+                    : `<div class="w-9 h-10 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-user-tie"></i></div>`;
+
+                tr.innerHTML = `
+                    <td class="px-3 py-3 text-center">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectAdminRow('${escapeHTML(itemId)}', this.checked)" class="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer">
+                    </td>
+                    <td class="px-4 py-3 text-center">${index + 1}</td>
+                    <td class="px-4 py-3">
+                        <div class="font-medium text-slate-800">${escapeHTML(item.agencyName)}</div>
+                        <div class="text-xs text-slate-500">${escapeHTML(item.agencyPhone)} ${item.subDistrict ? `• ต.${escapeHTML(item.subDistrict)}` : ''}</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2.5">
+                            ${avatarHtml}
+                            <div>
+                                <div class="font-medium text-slate-800 text-xs sm:text-sm">${escapeHTML(item.headName)}</div>
+                                <div class="text-xs text-slate-500">${escapeHTML(item.headMobile)}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3"><span class="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">${escapeHTML(item.agencyType)}</span></td>
+                    <td class="px-4 py-3">
+                        <div class="text-sm">${escapeHTML(item.submitterName)}</div>
+                        <div class="text-xs text-slate-500">${escapeHTML(item.submitterPhone)}</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="text-xs text-slate-600 bg-slate-100 inline-block px-2 py-1 rounded-md border border-slate-200">
+                            <i class="fa-regular fa-clock mr-1"></i> ${escapeHTML(item.lastUpdated || '-')}
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center space-x-1">
+                        <button onclick="editRecord('${escapeHTML(item.id)}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteRecord('${escapeHTML(item.id)}')" class="text-red-600 hover:bg-red-50 p-2 rounded transition-colors" title="ลบ"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateAdminExportControls();
+        }
+
+        function toggleSelectAdminRow(id, checked) {
+            if (checked) selectedExportIds.add(String(id));
+            else selectedExportIds.delete(String(id));
+            filterAdminTable();
+        }
+
+        function toggleSelectAllAdmin(checked) {
+            filteredAdminAgencies.forEach(item => {
+                if (checked) selectedExportIds.add(String(item.id));
+                else selectedExportIds.delete(String(item.id));
+            });
+            filterAdminTable();
+        }
+
+        function clearAdminSelection() {
+            selectedExportIds.clear();
+            filterAdminTable();
+        }
+
+        function resetAdminFilters() {
+            document.getElementById('adminFilterType').value = '';
+            document.getElementById('adminFilterSubDistrict').value = '';
+            document.getElementById('adminSearchInput').value = '';
+            filterAdminTable();
+        }
+
+        function updateAdminExportControls() {
+            const selectAllEl = document.getElementById('adminSelectAll');
+            const badgeEl = document.getElementById('adminSelectionBadge');
+            const clearBtn = document.getElementById('btnClearSelection');
+            const excelBtnText = document.getElementById('excelBtnText');
+            const pdfBtnText = document.getElementById('pdfBtnText');
+
+            const filteredSelectedCount = filteredAdminAgencies.filter(item => selectedExportIds.has(String(item.id))).length;
+            if (selectAllEl) {
+                selectAllEl.checked = filteredAdminAgencies.length > 0 && filteredSelectedCount === filteredAdminAgencies.length;
+                selectAllEl.indeterminate = filteredSelectedCount > 0 && filteredSelectedCount < filteredAdminAgencies.length;
+            }
+
+            if (selectedExportIds.size > 0) {
+                badgeEl.innerText = `เลือกไว้ ${selectedExportIds.size} แห่ง`;
+                badgeEl.classList.remove('hidden');
+                clearBtn.classList.remove('hidden');
+                excelBtnText.innerText = `ดาวน์โหลด Excel (ที่เลือก ${selectedExportIds.size} แห่ง)`;
+                pdfBtnText.innerText = `พิมพ์ / PDF (ที่เลือก ${selectedExportIds.size} แห่ง)`;
+            } else {
+                badgeEl.classList.add('hidden');
+                clearBtn.classList.add('hidden');
+                excelBtnText.innerText = `ดาวน์โหลด Excel (${filteredAdminAgencies.length} แห่ง)`;
+                pdfBtnText.innerText = `พิมพ์ / PDF (${filteredAdminAgencies.length} แห่ง)`;
             }
         }
 
@@ -1221,21 +1386,45 @@
         // ==========================================
         // 8. EXPORT EXCEL (.xlsx) & PDF (A4)
         // ==========================================
-        function exportToExcel() {
-            if (!allAgencies || allAgencies.length === 0) {
-                Swal.fire('ไม่มีข้อมูล', 'ไม่พบข้อมูลสำหรับส่งออกไฟล์ Excel', 'warning');
-                return;
+        function getExportDataset() {
+            let targetData = [];
+            let scopeLabel = 'ทั้งหมด';
+
+            if (selectedExportIds.size > 0) {
+                targetData = allAgencies.filter(item => selectedExportIds.has(String(item.id)));
+                scopeLabel = 'เลือกเฉพาะหน่วยงาน';
+            } else {
+                targetData = [...filteredAdminAgencies];
+                const filterType = document.getElementById('adminFilterType')?.value || '';
+                const filterSubDist = document.getElementById('adminFilterSubDistrict')?.value || '';
+                const searchVal = document.getElementById('adminSearchInput')?.value.trim() || '';
+
+                const filterParts = [];
+                if (filterType) filterParts.push(`ประเภท: ${filterType}`);
+                if (filterSubDist) filterParts.push(`ตำบล: ${filterSubDist}`);
+                if (searchVal) filterParts.push(`คำค้น: "${searchVal}"`);
+                if (filterParts.length > 0) scopeLabel = filterParts.join(' | ');
             }
 
-            const sortedData = [...allAgencies].sort((a, b) => {
+            targetData.sort((a, b) => {
                 const typeCmp = (a.agencyType || '').localeCompare(b.agencyType || '', 'th');
                 return typeCmp !== 0 ? typeCmp : (a.agencyName || '').localeCompare(b.agencyName || '', 'th');
             });
 
+            return { data: targetData, scopeLabel };
+        }
+
+        function exportToExcel() {
+            const { data: sortedData, scopeLabel } = getExportDataset();
+            if (!sortedData || sortedData.length === 0) {
+                Swal.fire('ไม่มีข้อมูล', 'ไม่พบข้อมูลสำหรับส่งออกไฟล์ Excel', 'warning');
+                return;
+            }
+
             const exportDate = getCurrentThaiDate();
             const sheetRows = [
                 ['ทำเนียบส่วนราชการ หน่วยงานรัฐวิสาหกิจ องค์กรปกครองส่วนท้องถิ่น และผู้นำท้องที่ อำเภอบ้านนาสาร จังหวัดสุราษฎร์ธานี'],
-                [`ข้อมูล ณ วันที่ ${exportDate} | จำนวนทั้งหมด ${sortedData.length} หน่วยงาน`],
+                [`ข้อมูล ณ วันที่ ${exportDate} | ขอบเขตข้อมูล: ${scopeLabel} | จำนวน ${sortedData.length} หน่วยงาน`],
                 [],
                 [
                     'ลำดับ', 'ประเภทหน่วยงาน', 'ชื่อหน่วยงาน', 'หมายเลขโทรศัพท์หน่วยงาน',
@@ -1300,15 +1489,11 @@
         }
 
         function exportToPDF() {
-            if (!allAgencies || allAgencies.length === 0) {
+            const { data: sortedData, scopeLabel } = getExportDataset();
+            if (!sortedData || sortedData.length === 0) {
                 Swal.fire('ไม่มีข้อมูล', 'ไม่พบข้อมูลสำหรับสร้างรายงาน PDF', 'warning');
                 return;
             }
-
-            const sortedData = [...allAgencies].sort((a, b) => {
-                const typeCmp = (a.agencyType || '').localeCompare(b.agencyType || '', 'th');
-                return typeCmp !== 0 ? typeCmp : (a.agencyName || '').localeCompare(b.agencyName || '', 'th');
-            });
 
             const exportDate = getCurrentThaiDate();
             let tableRowsHtml = '';
@@ -1475,7 +1660,7 @@
                         <div class="report-header">
                             <h1>ทำเนียบส่วนราชการ หน่วยงานรัฐวิสาหกิจ องค์กรปกครองส่วนท้องถิ่น และผู้นำท้องที่</h1>
                             <h2>อำเภอบ้านนาสาร จังหวัดสุราษฎร์ธานี</h2>
-                            <div class="report-meta">ข้อมูล ณ วันที่ ${escapeHTML(exportDate)} &nbsp;|&nbsp; จำนวนทั้งหมด ${sortedData.length} หน่วยงาน</div>
+                            <div class="report-meta">ข้อมูล ณ วันที่ ${escapeHTML(exportDate)} &nbsp;|&nbsp; ขอบเขตข้อมูล: ${escapeHTML(scopeLabel)} &nbsp;|&nbsp; จำนวน ${sortedData.length} หน่วยงาน</div>
                         </div>
 
                         <table>
