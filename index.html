@@ -13,7 +13,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="ทำเนียบบ้านนาสาร">
-
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -255,7 +254,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อ-สกุล หัวหน้าหน่วยงาน <span class="text-red-500">*</span></label>
-                                <input type="text" id="headName" required placeholder="เช่น นายสมชาย ใจดี" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <input type="text" id="headName" required placeholder="เช่น นายอำเภอ บ้านนาสาร" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ตำแหน่ง <span class="text-red-500">*</span></label>
@@ -495,6 +494,9 @@
                         </button>
                         <button onclick="exportToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
                             <i class="fa-solid fa-file-pdf"></i> <span id="pdfBtnText">พิมพ์ / ส่งออก PDF (A4)</span>
+                        </button>
+                        <button onclick="exportToVCF()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fa-solid fa-address-card"></i> <span id="vcfBtnText">ดาวน์โหลดรายชื่อ (.vcf)</span>
                         </button>
                     </div>
                 </div>
@@ -1062,8 +1064,11 @@
                         </div>
                         ` : ''}
                     </div>
-                    <div class="bg-slate-50 px-5 py-3 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center rounded-b-2xl">
+                    <div class="bg-slate-50 px-5 py-3 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center gap-2 rounded-b-2xl">
                         <span><i class="fa-regular fa-clock mr-1"></i> อัปเดต: ${escapeHTML(item.lastUpdated || '-')}</span>
+                        <button type="button" onclick="exportSingleVCard('${escapeHTML(item.id)}')" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-medium transition-colors border border-indigo-200 shrink-0" title="ดาวน์โหลดไฟล์ .vcf เพื่อบันทึกลงรายชื่อมือถือ">
+                            <i class="fa-solid fa-user-plus"></i> บันทึกรายชื่อ
+                        </button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -1291,6 +1296,7 @@
             const clearBtn = document.getElementById('btnClearSelection');
             const excelBtnText = document.getElementById('excelBtnText');
             const pdfBtnText = document.getElementById('pdfBtnText');
+            const vcfBtnText = document.getElementById('vcfBtnText');
 
             const filteredSelectedCount = filteredAdminAgencies.filter(item => selectedExportIds.has(String(item.id))).length;
             if (selectAllEl) {
@@ -1304,11 +1310,13 @@
                 clearBtn.classList.remove('hidden');
                 excelBtnText.innerText = `ดาวน์โหลด Excel (ที่เลือก ${selectedExportIds.size} แห่ง)`;
                 pdfBtnText.innerText = `พิมพ์ / PDF (ที่เลือก ${selectedExportIds.size} แห่ง)`;
+                vcfBtnText.innerText = `รายชื่อมือถือ .vcf (ที่เลือก ${selectedExportIds.size} แห่ง)`;
             } else {
                 badgeEl.classList.add('hidden');
                 clearBtn.classList.add('hidden');
                 excelBtnText.innerText = `ดาวน์โหลด Excel (${filteredAdminAgencies.length} แห่ง)`;
                 pdfBtnText.innerText = `พิมพ์ / PDF (${filteredAdminAgencies.length} แห่ง)`;
+                vcfBtnText.innerText = `รายชื่อมือถือ .vcf (${filteredAdminAgencies.length} แห่ง)`;
             }
         }
 
@@ -1700,6 +1708,128 @@
                 </html>
             `);
             printWindow.document.close();
+        }
+
+        // ==========================================
+        // 9. EXPORT VCARD (.vcf) สำหรับแอป Contacts บนมือถือ
+        // ==========================================
+        function escapeVCard(str) {
+            return String(str || '')
+                .replace(/\\/g, '\\\\')
+                .replace(/;/g, '\\;')
+                .replace(/,/g, '\\,')
+                .replace(/\r?\n/g, '\\n');
+        }
+
+        function buildVCardEntry(item) {
+            const headName = (item.headName || '').trim();
+            const agencyName = (item.agencyName || '').trim();
+            const displayName = headName || agencyName || 'หน่วยงาน อำเภอบ้านนาสาร';
+
+            // จัดเตรียมที่อยู่สำหรับฟิลด์ ADR ของ vCard
+            const streetParts = [];
+            if (item.building) streetParts.push(item.building);
+            if (item.floorRoom) streetParts.push(`ชั้น/ห้อง ${item.floorRoom}`);
+            if (item.houseNo) streetParts.push(`เลขที่ ${item.houseNo}`);
+            if (item.moo) streetParts.push(`หมู่ที่ ${item.moo}`);
+            if (item.alley) streetParts.push(`ซอย${item.alley}`);
+            if (item.road) streetParts.push(`ถนน${item.road}`);
+            const street = streetParts.join(' ');
+            const locality = item.subDistrict ? `ต.${item.subDistrict}` : '';
+            const region = [item.district ? `อ.${item.district}` : '', item.province ? `จ.${item.province}` : ''].filter(Boolean).join(' ');
+            const postalCode = item.zipCode || '';
+
+            // รวบรวมหมายเหตุและพิกัด
+            const noteParts = [];
+            if (item.agencyType) noteParts.push(`ประเภท: ${item.agencyType}`);
+            if (item.notes) noteParts.push(`หมายเหตุ: ${item.notes}`);
+            if (item.latLng) noteParts.push(`พิกัด: ${item.latLng}`);
+
+            const lines = [
+                'BEGIN:VCARD',
+                'VERSION:3.0',
+                `N;CHARSET=UTF-8:;${escapeVCard(displayName)};;;`,
+                `FN;CHARSET=UTF-8:${escapeVCard(displayName)}`
+            ];
+
+            if (agencyName) {
+                lines.push(`ORG;CHARSET=UTF-8:${escapeVCard(agencyName)}`);
+            }
+            if (item.headTitle) {
+                lines.push(`TITLE;CHARSET=UTF-8:${escapeVCard(item.headTitle)}`);
+            }
+            if (item.headMobile) {
+                lines.push(`TEL;TYPE=CELL,VOICE:${String(item.headMobile).trim()}`);
+            }
+            if (item.agencyPhone) {
+                lines.push(`TEL;TYPE=WORK,VOICE:${String(item.agencyPhone).trim()}`);
+            }
+            if (street || locality || region || postalCode) {
+                lines.push(`ADR;TYPE=WORK;CHARSET=UTF-8:;;${escapeVCard(street)};${escapeVCard(locality)};${escapeVCard(region)};${escapeVCard(postalCode)};ประเทศไทย`);
+            }
+            if (item.latLng) {
+                lines.push(`URL:https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.latLng)}`);
+            }
+            if (noteParts.length > 0) {
+                lines.push(`NOTE;CHARSET=UTF-8:${escapeVCard(noteParts.join(' | '))}`);
+            }
+
+            lines.push('END:VCARD');
+            return lines.join('\r\n');
+        }
+
+        function downloadVCardFile(vcfContent, filename) {
+            const blob = new Blob([vcfContent], { type: 'text/vcard;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        // ส่งออกรายชื่อเดี่ยวจากการ์ดหน้าแดชบอร์ด
+        function exportSingleVCard(id) {
+            const item = allAgencies.find(r => String(r.id) === String(id));
+            if (!item) return;
+
+            const vcfContent = buildVCardEntry(item);
+            const safeFileName = (item.agencyName || item.headName || 'contact')
+                .replace(/[\\/:*?"<>|]/g, '_')
+                .slice(0, 50);
+
+            downloadVCardFile(vcfContent, `${safeFileName}.vcf`);
+            Swal.fire({
+                icon: 'success',
+                title: 'ดาวน์โหลดรายชื่อแล้ว',
+                text: 'เปิดไฟล์ .vcf ที่ดาวน์โหลดเพื่อเพิ่มลงในแอป Contacts (รายชื่อ) บนมือถือได้ทันที',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3500
+            });
+        }
+
+        // ส่งออกรายชื่อแบบกลุ่มจากหน้าแอดมิน (อิงตามตัวกรองหรือ Checkbox ที่เลือก)
+        function exportToVCF() {
+            const { data: sortedData } = getExportDataset();
+            if (!sortedData || sortedData.length === 0) {
+                Swal.fire('ไม่มีข้อมูล', 'ไม่พบข้อมูลสำหรับส่งออกไฟล์รายชื่อ (.vcf)', 'warning');
+                return;
+            }
+
+            const vcfContent = sortedData.map(item => buildVCardEntry(item)).join('\r\n');
+            const todayStr = new Date().toISOString().slice(0, 10);
+            downloadVCardFile(vcfContent, `รายชื่อหน่วยงาน_อำเภอบ้านนาสาร_${todayStr}.vcf`);
+
+            Swal.fire({
+                icon: 'success',
+                title: `ส่งออกรายชื่อ ${sortedData.length} หน่วยงานแล้ว`,
+                text: 'สามารถนำไฟล์ .vcf ไปเปิดบนมือถือเพื่อนำเข้าแอป Contacts (รายชื่อ) ได้ทันที',
+                confirmButtonColor: '#0284c7'
+            });
         }
 
         // ผูกฟังก์ชันจัดรูปแบบเบอร์โทรศัพท์อัตโนมัติ (แก้ปัญหามือถือพิมพ์ขีด - ไม่ได้)
