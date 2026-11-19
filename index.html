@@ -1721,7 +1721,35 @@
                 .replace(/\r?\n/g, '\\n');
         }
 
-        function buildVCardEntry(item) {
+        // พับบรรทัด Base64 ทุก 74 ตัวอักษรตามมาตรฐาน RFC 2426 (รองรับทั้ง iOS และ Android)
+        function foldVCardLine(line) {
+            const maxLen = 74;
+            if (line.length <= maxLen) return line;
+            let result = '';
+            for (let i = 0; i < line.length; i += maxLen) {
+                result += (i === 0 ? '' : '\r\n ') + line.slice(i, i + maxLen);
+            }
+            return result;
+        }
+
+        // ดึงรูปภาพ Base64 จาก Apps Script แบบแบ่งชุด (Batch) เพื่อความเสถียร
+        async function fetchPhotosBase64Map(items) {
+            const uniqueUrls = [...new Set(items.map(i => (i.headPhoto || '').trim()).filter(Boolean))];
+            const photoMap = {};
+            if (uniqueUrls.length === 0) return photoMap;
+
+            const BATCH_SIZE = 15;
+            for (let i = 0; i < uniqueUrls.length; i += BATCH_SIZE) {
+                const batch = uniqueUrls.slice(i, i + BATCH_SIZE);
+                const res = await fetchAPI('getPhotosBase64', { urls: batch });
+                if (res && res.status === 'success' && res.photos) {
+                    Object.assign(photoMap, res.photos);
+                }
+            }
+            return photoMap;
+        }
+
+        function buildVCardEntry(item, photoData = null) {
             const headName = (item.headName || '').trim();
             const agencyName = (item.agencyName || '').trim();
             const displayName = headName || agencyName || 'หน่วยงาน อำเภอบ้านนาสาร';
@@ -1773,6 +1801,11 @@
             if (noteParts.length > 0) {
                 lines.push(`NOTE;CHARSET=UTF-8:${escapeVCard(noteParts.join(' | '))}`);
             }
+            // แนบรูปภาพหัวหน้าหน่วยงาน (Base64) ลงใน vCard
+            if (photoData && photoData.base64) {
+                const imgType = photoData.type || 'JPEG';
+                lines.push(foldVCardLine(`PHOTO;ENCODING=b;TYPE=${imgType}:${photoData.base64}`));
+            }
 
             lines.push('END:VCARD');
             return lines.join('\r\n');
@@ -1790,12 +1823,24 @@
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         }
 
-        // ส่งออกรายชื่อเดี่ยวจากการ์ดหน้าแดชบอร์ด
-        function exportSingleVCard(id) {
+        // ส่งออกรายชื่อเดี่ยวจากการ์ดหน้าแดชบอร์ด (พร้อมรูปภาพ)
+        async function exportSingleVCard(id) {
             const item = allAgencies.find(r => String(r.id) === String(id));
             if (!item) return;
 
-            const vcfContent = buildVCardEntry(item);
+            let photoData = null;
+            if (item.headPhoto) {
+                Swal.fire({
+                    title: 'กำลังเตรียมไฟล์รายชื่อและรูปภาพ...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+                const photoMap = await fetchPhotosBase64Map([item]);
+                photoData = photoMap[item.headPhoto.trim()] || null;
+                Swal.close();
+            }
+
+            const vcfContent = buildVCardEntry(item, photoData);
             const safeFileName = (item.agencyName || item.headName || 'contact')
                 .replace(/[\\/:*?"<>|]/g, '_')
                 .slice(0, 50);
@@ -1812,22 +1857,37 @@
             });
         }
 
-        // ส่งออกรายชื่อแบบกลุ่มจากหน้าแอดมิน (อิงตามตัวกรองหรือ Checkbox ที่เลือก)
-        function exportToVCF() {
+        // ส่งออกรายชื่อแบบกลุ่มจากหน้าแอดมิน (อิงตามตัวกรองหรือ Checkbox ที่เลือก พร้อมรูปภาพ)
+        async function exportToVCF() {
             const { data: sortedData } = getExportDataset();
             if (!sortedData || sortedData.length === 0) {
                 Swal.fire('ไม่มีข้อมูล', 'ไม่พบข้อมูลสำหรับส่งออกไฟล์รายชื่อ (.vcf)', 'warning');
                 return;
             }
 
-            const vcfContent = sortedData.map(item => buildVCardEntry(item)).join('\r\n');
+            const hasPhotos = sortedData.some(item => item.headPhoto && item.headPhoto.trim() !== '');
+            let photoMap = {};
+            if (hasPhotos) {
+                Swal.fire({
+                    title: 'กำลังเตรียมไฟล์รายชื่อและรูปภาพ...',
+                    text: `กำลังดึงรูปภาพของ ${sortedData.length} หน่วยงาน โปรดรอสักครู่`,
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+                photoMap = await fetchPhotosBase64Map(sortedData);
+                Swal.close();
+            }
+
+            const vcfContent = sortedData
+                .map(item => buildVCardEntry(item, item.headPhoto ? photoMap[item.headPhoto.trim()] : null))
+                .join('\r\n');
             const todayStr = new Date().toISOString().slice(0, 10);
             downloadVCardFile(vcfContent, `รายชื่อหน่วยงาน_อำเภอบ้านนาสาร_${todayStr}.vcf`);
 
             Swal.fire({
                 icon: 'success',
                 title: `ส่งออกรายชื่อ ${sortedData.length} หน่วยงานแล้ว`,
-                text: 'สามารถนำไฟล์ .vcf ไปเปิดบนมือถือเพื่อนำเข้าแอป Contacts (รายชื่อ) ได้ทันที',
+                text: 'สามารถนำไฟล์ .vcf ไปเปิดบนมือถือเพื่อนำเข้าแอป Contacts (รายชื่อ) พร้อมรูปภาพได้ทันที',
                 confirmButtonColor: '#0284c7'
             });
         }
