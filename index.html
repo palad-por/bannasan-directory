@@ -17,6 +17,9 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- SheetJS สำหรับส่งออกไฟล์ Excel (.xlsx) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -100,6 +103,7 @@
                 
                 <form id="dataForm" class="p-6 sm:p-8 space-y-8" onsubmit="handleFormSubmit(event)">
                     <input type="hidden" id="recordId">
+                    <input type="hidden" id="existingHeadPhoto">
                     
                     <!-- ส่วนที่ 1: ข้อมูลหน่วยงาน -->
                     <div>
@@ -132,9 +136,10 @@
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อหน่วยงาน <span class="text-red-500">*</span></label>
                                 <input type="text" id="agencyName" required placeholder="เช่น ที่ว่าการอำเภอบ้านนาสาร, เทศบาลเมืองนาสาร" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
                             </div>
-                            <div>
+                            <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">หมายเลขโทรศัพท์ของหน่วยงาน <span class="text-red-500">*</span></label>
-                                <input type="tel" id="agencyPhone" required placeholder="เช่น 077-xxx-xxx" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <input type="tel" inputmode="numeric" id="agencyPhone" required maxlength="12" placeholder="เช่น 077-341-481" class="w-full md:w-1/2 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-circle-info text-primary-500 mr-1"></i>พิมพ์เฉพาะตัวเลข ระบบจะจัดรูปแบบและใส่ขีด (-) ให้อัตโนมัติ</p>
                             </div>
                         </div>
                     </div>
@@ -162,7 +167,7 @@
                                 <input type="text" id="moo" placeholder="เช่น 1" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
                             </div>
                             
-                            <!-- เพิ่มตรอก/ซอย และ ถนน -->
+                            <!-- ตรอก/ซอย และ ถนน -->
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ตรอก/ซอย</label>
                                 <input type="text" id="alley" placeholder="เช่น 1 หรือ เจริญสุข" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
@@ -185,7 +190,7 @@
                                 <input type="text" id="province" value="สุราษฎร์ธานี" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all bg-slate-50">
                             </div>
                             
-                            <!-- ปรับช่องรหัสไปรษณีย์ ละติจูด และ ลองจิจูด ให้อยู่แถวเดียวกัน -->
+                            <!-- รหัสไปรษณีย์ ละติจูด และ ลองจิจูด -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">รหัสไปรษณีย์</label>
                                 <input type="text" id="zipCode" value="84120" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all bg-slate-50">
@@ -209,6 +214,34 @@
                         <h3 class="text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
                             <i class="fa-solid fa-user-tie text-slate-400 mr-2"></i>ส่วนที่ 3: ข้อมูลหัวหน้าหน่วยงาน
                         </h3>
+
+                        <!-- อัปโหลดรูปภาพหัวหน้าหน่วยงาน -->
+                        <div class="mb-6 bg-primary-50/50 border border-primary-100 rounded-xl p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-3">รูปภาพหัวหน้าหน่วยงาน (ภาพหน้าตรง / ภาพสุภาพ)</label>
+                            <div class="flex flex-col sm:flex-row items-center gap-5">
+                                <!-- กรอบแสดงตัวอย่างรูปภาพ -->
+                                <div class="relative w-24 h-28 rounded-xl overflow-hidden bg-white border-2 border-primary-200 shadow-sm flex items-center justify-center shrink-0">
+                                    <img id="headPhotoPreview" src="" alt="ตัวอย่างรูปหัวหน้าหน่วยงาน" class="hidden w-full h-full object-cover">
+                                    <div id="headPhotoPlaceholder" class="text-center text-primary-300">
+                                        <i class="fa-solid fa-user-tie text-4xl"></i>
+                                        <p class="text-[10px] text-slate-400 mt-1">ยังไม่มีรูป</p>
+                                    </div>
+                                </div>
+                                <div class="flex-1 text-center sm:text-left">
+                                    <input type="file" id="headPhotoInput" accept="image/*" class="hidden" onchange="handlePhotoSelect(event)">
+                                    <div class="flex flex-wrap justify-center sm:justify-start gap-2">
+                                        <button type="button" onclick="document.getElementById('headPhotoInput').click()" class="bg-white hover:bg-primary-50 text-primary-700 border border-primary-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm inline-flex items-center gap-2">
+                                            <i class="fa-solid fa-camera"></i> เลือกรูปภาพ
+                                        </button>
+                                        <button type="button" id="btnRemovePhoto" onclick="clearHeadPhoto()" class="hidden bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1">
+                                            <i class="fa-solid fa-trash-can"></i> ลบรูป
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">รองรับไฟล์ภาพ JPG, PNG แนะนำภาพแนวตั้งหรือสี่เหลี่ยมจัตุรัส (ระบบจะปรับขนาดอัตโนมัติ)</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อ-สกุล หัวหน้าหน่วยงาน <span class="text-red-500">*</span></label>
@@ -220,7 +253,8 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">หมายเลขโทรศัพท์มือถือ <span class="text-red-500">*</span></label>
-                                <input type="tel" id="headMobile" required placeholder="เช่น 08x-xxx-xxxx" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <input type="tel" inputmode="numeric" id="headMobile" required maxlength="12" placeholder="เช่น 081-234-5678" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none transition-all">
+                                <p class="text-[11px] text-slate-500 mt-1">พิมพ์เฉพาะตัวเลข ระบบใส่ขีด (-) ให้อัตโนมัติ</p>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุการติดต่อ (ถ้ามี)</label>
@@ -245,13 +279,12 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-700 mb-1">เบอร์โทร ผู้แจ้ง <span class="text-red-500">*</span></label>
-                                <input type="tel" id="submitterPhone" required class="w-full px-3 py-2 text-sm rounded-md border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none">
+                                <input type="tel" inputmode="numeric" id="submitterPhone" required maxlength="12" placeholder="08x-xxx-xxxx" class="w-full px-3 py-2 text-sm rounded-md border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none">
                             </div>
                         </div>
                     </div>
 
                     <div class="pt-4 border-t border-slate-200 flex justify-end gap-3">
-                        <!-- ปุ่มยกเลิก ซ่อนไว้ จะแสดงเมื่อเป็นการแก้ไขผ่าน Admin -->
                         <button type="button" id="btnCancelEdit" onclick="cancelEdit()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-lg shadow-sm transition-all text-lg">
                             ยกเลิก
                         </button>
@@ -392,16 +425,16 @@
                     <h2 class="text-2xl md:text-3xl font-bold text-slate-800">
                         <i class="fa-solid fa-shield-halved text-slate-700 mr-2"></i> แผงควบคุมผู้ดูแลระบบ
                     </h2>
-                    <p class="text-slate-500">จัดการข้อมูลหน่วยงาน และบัญชีผู้ดูแล</p>
+                    <p class="text-slate-500">จัดการข้อมูลหน่วยงาน บัญชีผู้ดูแล และส่งออกรายงาน</p>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="switchView('dashboard')" class="bg-primary-50 text-primary-700 hover:bg-primary-100 px-4 py-2 rounded-lg font-medium transition-colors border border-primary-200">
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="switchView('dashboard')" class="bg-primary-50 text-primary-700 hover:bg-primary-100 px-4 py-2 rounded-lg font-medium transition-colors border border-primary-200 text-sm">
                         <i class="fa-solid fa-tv mr-1"></i> ดูแดชบอร์ด
                     </button>
-                    <button onclick="switchView('form')" class="bg-primary-50 text-primary-700 hover:bg-primary-100 px-4 py-2 rounded-lg font-medium transition-colors border border-primary-200">
+                    <button onclick="switchView('form')" class="bg-primary-50 text-primary-700 hover:bg-primary-100 px-4 py-2 rounded-lg font-medium transition-colors border border-primary-200 text-sm">
                         <i class="fa-solid fa-plus mr-1"></i> เพิ่มข้อมูลเอง
                     </button>
-                    <button onclick="handleLogout()" class="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-lg font-medium transition-colors border border-red-200">
+                    <button onclick="handleLogout()" class="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-lg font-medium transition-colors border border-red-200 text-sm">
                         <i class="fa-solid fa-right-from-bracket mr-1"></i> ออกจากระบบ
                     </button>
                 </div>
@@ -434,10 +467,18 @@
                 </div>
             </div>
 
-            <!-- ตารางจัดการข้อมูล -->
+            <!-- ตารางจัดการข้อมูล & ปุ่มส่งออก Excel / PDF -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <h3 class="font-bold text-lg text-slate-800">ฐานข้อมูลหน่วยงาน (<span id="adminDataCount">0</span> รายการ)</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fa-solid fa-file-excel"></i> ดาวน์โหลด Excel
+                        </button>
+                        <button onclick="exportToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fa-solid fa-file-pdf"></i> พิมพ์ / ส่งออก PDF (A4)
+                        </button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -445,10 +486,11 @@
                             <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
                                 <th class="px-4 py-3 font-semibold w-16 text-center">ลำดับ</th>
                                 <th class="px-4 py-3 font-semibold">หน่วยงาน</th>
+                                <th class="px-4 py-3 font-semibold">หัวหน้าหน่วยงาน</th>
                                 <th class="px-4 py-3 font-semibold">ประเภท</th>
                                 <th class="px-4 py-3 font-semibold">ผู้ให้ข้อมูล</th>
                                 <th class="px-4 py-3 font-semibold">อัปเดตล่าสุด</th>
-                                <th class="px-4 py-3 font-semibold text-center w-32">จัดการ</th>
+                                <th class="px-4 py-3 font-semibold text-center w-28">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody id="adminTableBody" class="divide-y divide-slate-200 text-sm">
@@ -471,7 +513,6 @@
         // ==========================================
         // 1. API & STATE CONFIGURATION
         // ==========================================
-        // !!! เอา URL ที่ได้จากการ Deploy Web App มาใส่ตรงนี้ !!!
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymepcbK7XCxBkEQ2QgWWW-0cfJi4wf0RQD6x1fNIvtXs_7i0DxTusNkZGykcW-CF3vjQ/exec'; 
         
         function getCurrentThaiDate() {
@@ -481,6 +522,7 @@
         let isSurveyOpen = true; 
         let isLoggedIn = false;  
         let allAgencies = []; 
+        let selectedPhotoBase64 = ''; // เก็บข้อมูลรูปภาพใหม่ที่ถูกย่อขนาดแล้ว
 
         async function fetchAPI(action, payload = null) {
             try {
@@ -498,7 +540,141 @@
         }
 
         // ==========================================
-        // 2. VIEW CONTROLLER
+        // 2. PHONE AUTO-FORMATTER & ADDRESS HELPER
+        // ==========================================
+        // จัดรูปแบบเบอร์โทรอัตโนมัติ (แก้ปัญหามือถือพิมพ์ขีด - ไม่ได้ และคงเลข 0 นำหน้า)
+        function formatPhoneInput(value) {
+            const digits = value.replace(/\D/g, '').substring(0, 10);
+            if (!digits) return '';
+            
+            // เบอร์กรุงเทพฯ 02-xxx-xxxx (9 หลัก)
+            if (digits.startsWith('02')) {
+                if (digits.length <= 2) return digits;
+                if (digits.length <= 5) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+                return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5, 9)}`;
+            }
+            // เบอร์มือถือ (06, 08, 09 -> 10 หลัก) หรือเบอร์สำนักงานภูมิภาค (077 -> 9 หลัก)
+            if (digits.length <= 3) return digits;
+            if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+            return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+        }
+
+        function buildFullAddress(item) {
+            let addressArr = [];
+            if(item.building) addressArr.push(item.building);
+            if(item.floorRoom) addressArr.push(`ชั้น/ห้อง ${item.floorRoom}`);
+            if(item.houseNo) addressArr.push(`เลขที่ ${item.houseNo}`);
+            if(item.moo) addressArr.push(`หมู่ที่ ${item.moo}`);
+            if(item.alley) addressArr.push(`ซอย${item.alley}`);
+            if(item.road) addressArr.push(`ถนน${item.road}`);
+            if(item.subDistrict) addressArr.push(`ต.${item.subDistrict}`);
+            if(item.district) addressArr.push(`อ.${item.district}`);
+            if(item.province) addressArr.push(`จ.${item.province}`);
+            if(item.zipCode) addressArr.push(item.zipCode);
+            return addressArr.join(' ') || '-';
+        }
+
+        function escapeHTML(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // ==========================================
+        // 3. HEAD PHOTO UPLOAD & RESIZE (CANVAS)
+        // ==========================================
+        function handlePhotoSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                Swal.fire('ไฟล์ไม่ถูกต้อง', 'กรุณาเลือกไฟล์รูปภาพ (JPG, PNG) เท่านั้น', 'warning');
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // ย่อขนาดภาพไม่ให้เกิน 450px เพื่อประหยัดพื้นที่และโหลดเร็ว
+                    const MAX_SIZE = 450;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height = Math.round(height * (MAX_SIZE / width));
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width = Math.round(width * (MAX_SIZE / height));
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    selectedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.82);
+                    showPhotoPreview(selectedPhotoBase64);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showPhotoPreview(src) {
+            const preview = document.getElementById('headPhotoPreview');
+            const placeholder = document.getElementById('headPhotoPlaceholder');
+            const btnRemove = document.getElementById('btnRemovePhoto');
+
+            if (src) {
+                preview.src = src;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                btnRemove.classList.remove('hidden');
+            } else {
+                preview.src = '';
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                btnRemove.classList.add('hidden');
+            }
+        }
+
+        function clearHeadPhoto() {
+            selectedPhotoBase64 = '';
+            document.getElementById('existingHeadPhoto').value = '';
+            document.getElementById('headPhotoInput').value = '';
+            showPhotoPreview('');
+        }
+
+        function previewHeadPhotoModal(url, name, title) {
+            Swal.fire({
+                title: name || 'หัวหน้าหน่วยงาน',
+                text: title || '',
+                imageUrl: url,
+                imageAlt: name,
+                imageHeight: 340,
+                confirmButtonText: 'ปิด',
+                confirmButtonColor: '#0284c7',
+                customClass: {
+                    image: 'rounded-xl object-cover border-2 border-primary-100 shadow-md mx-auto'
+                }
+            });
+        }
+
+        // ==========================================
+        // 4. VIEW CONTROLLER
         // ==========================================
         function switchView(view) {
             const views = ['view-form', 'view-dashboard', 'view-admin-login', 'view-admin-panel'];
@@ -522,7 +698,7 @@
         }
 
         // ==========================================
-        // 3. FORM & DATA ENTRY
+        // 5. FORM & DATA ENTRY
         // ==========================================
         function toggleOtherTypeInput() {
             const type = document.getElementById('agencyType').value;
@@ -579,7 +755,7 @@
                 id: idVal ? idVal : "", 
                 agencyType: typeVal,
                 agencyName: document.getElementById('agencyName').value.trim(),
-                agencyPhone: document.getElementById('agencyPhone').value.trim(),
+                agencyPhone: formatPhoneInput(document.getElementById('agencyPhone').value.trim()),
                 
                 // ข้อมูลที่ตั้ง
                 building: document.getElementById('building').value.trim(),
@@ -594,20 +770,24 @@
                 zipCode: document.getElementById('zipCode').value.trim(),
                 latLng: combinedLatLng,
 
-                // ข้อมูลหัวหน้าหน่วยงาน และผู้แจ้ง
+                // ข้อมูลหัวหน้าหน่วยงาน และรูปภาพ
                 headName: document.getElementById('headName').value.trim(),
                 headTitle: document.getElementById('headTitle').value.trim(),
-                headMobile: document.getElementById('headMobile').value.trim(),
+                headMobile: formatPhoneInput(document.getElementById('headMobile').value.trim()),
+                headPhoto: document.getElementById('existingHeadPhoto').value.trim(),
+                headPhotoBase64: selectedPhotoBase64,
                 notes: document.getElementById('notes').value.trim(),
+
+                // ข้อมูลผู้แจ้ง
                 submitterName: document.getElementById('submitterName').value.trim(),
                 submitterTitle: document.getElementById('submitterTitle').value.trim(),
-                submitterPhone: document.getElementById('submitterPhone').value.trim(),
+                submitterPhone: formatPhoneInput(document.getElementById('submitterPhone').value.trim()),
                 lastUpdated: getCurrentThaiDate()
             };
 
             const btnSubmit = document.getElementById('btnSubmit');
             const originalBtnText = btnSubmit.innerHTML;
-            btnSubmit.innerHTML = `<div class="loader border-t-white mr-2 w-5 h-5 border-2"></div> กำลังบันทึก...`;
+            btnSubmit.innerHTML = `<div class="loader border-t-white mr-2 w-5 h-5 border-2"></div> กำลังบันทึกข้อมูล...`;
             btnSubmit.disabled = true;
 
             const res = await fetchAPI('saveData', { payload: formData });
@@ -628,6 +808,7 @@
         function resetFormState() {
             document.getElementById('dataForm').reset();
             document.getElementById('recordId').value = '';
+            clearHeadPhoto();
             document.getElementById('district').value = 'บ้านนาสาร';
             document.getElementById('province').value = 'สุราษฎร์ธานี';
             document.getElementById('zipCode').value = '84120';
@@ -646,7 +827,7 @@
         }
 
         // ==========================================
-        // 4. DASHBOARD
+        // 6. DASHBOARD
         // ==========================================
         async function loadDashboardData() {
             const container = document.getElementById('dataContainer');
@@ -663,7 +844,7 @@
                 isSurveyOpen = res.isSurveyOpen;
                 document.getElementById('toggleSurvey').checked = isSurveyOpen;
                 
-                allAgencies.sort((a, b) => a.agencyName.localeCompare(b.agencyName, 'th'));
+                allAgencies.sort((a, b) => (a.agencyName || '').localeCompare(b.agencyName || '', 'th'));
                 populateDropdown(allAgencies);
                 populateSubDistrictDropdown(allAgencies);
                 filterDashboard(); 
@@ -680,7 +861,7 @@
             const uniqueAgencies = [...new Set(data.map(item => item.agencyName))];
             
             let optionsHTML = '<option value="">-- ชื่อหน่วยงานทั้งหมด --</option>';
-            uniqueAgencies.forEach(agency => optionsHTML += `<option value="${agency}">${agency}</option>`);
+            uniqueAgencies.forEach(agency => optionsHTML += `<option value="${escapeHTML(agency)}">${escapeHTML(agency)}</option>`);
             
             dropdown.innerHTML = optionsHTML;
             dropdown.value = currentValue || ''; 
@@ -689,12 +870,11 @@
         function populateSubDistrictDropdown(data) {
             const dropdown = document.getElementById('filterSubDistrict');
             const currentValue = dropdown.value;
-            // กรองเอาเฉพาะข้อมูลที่มีตำบลและไม่ซ้ำกัน
             const uniqueSubDistricts = [...new Set(data.map(item => item.subDistrict).filter(sub => sub && sub.trim() !== ''))];
             uniqueSubDistricts.sort((a, b) => a.localeCompare(b, 'th'));
             
             let optionsHTML = '<option value="">-- ทุกตำบล --</option>';
-            uniqueSubDistricts.forEach(sub => optionsHTML += `<option value="${sub}">${sub}</option>`);
+            uniqueSubDistricts.forEach(sub => optionsHTML += `<option value="${escapeHTML(sub)}">${escapeHTML(sub)}</option>`);
             
             dropdown.innerHTML = optionsHTML;
             dropdown.value = currentValue || ''; 
@@ -708,13 +888,12 @@
             
             const filteredData = allAgencies.filter(item => {
                 let matchType = true;
-                if(filterType === "อื่นๆ") matchType = item.agencyType.startsWith("อื่นๆ");
+                if(filterType === "อื่นๆ") matchType = (item.agencyType || '').startsWith("อื่นๆ");
                 else if(filterType !== "") matchType = item.agencyType === filterType;
                 
                 const matchSubDist = filterSubDist === "" || item.subDistrict === filterSubDist;
                 const matchDropdown = dropdownVal === "" || item.agencyName === dropdownVal;
                 
-                // ค้นหาครอบคลุมชื่อ, ตำแหน่ง, เบอร์, อาคาร, ตำบล, ซอย, ถนน ฯลฯ
                 const searchString = `${item.agencyName} ${item.headName} ${item.headTitle} ${item.agencyPhone} ${item.headMobile} ${item.agencyType} ${item.building} ${item.subDistrict} ${item.alley || ''} ${item.road || ''}`.toLowerCase();
                 const matchSearch = searchString.includes(searchVal);
                 
@@ -737,56 +916,67 @@
 
             data.forEach(item => {
                 let badgeColor = 'bg-primary-100 text-primary-800';
-                if(item.agencyType.includes('ราชการ')) badgeColor = 'bg-blue-100 text-blue-800';
-                if(item.agencyType.includes('ท้องถิ่น')) badgeColor = 'bg-emerald-100 text-emerald-800';
-                if(item.agencyType.includes('โรงเรียน')) badgeColor = 'bg-orange-100 text-orange-800';
-                if(item.agencyType.includes('วิสาหกิจ')) badgeColor = 'bg-purple-100 text-purple-800';
+                if((item.agencyType || '').includes('ราชการ')) badgeColor = 'bg-blue-100 text-blue-800';
+                if((item.agencyType || '').includes('ท้องถิ่น')) badgeColor = 'bg-emerald-100 text-emerald-800';
+                if((item.agencyType || '').includes('โรงเรียน')) badgeColor = 'bg-orange-100 text-orange-800';
+                if((item.agencyType || '').includes('วิสาหกิจ')) badgeColor = 'bg-purple-100 text-purple-800';
 
-                // จัดเรียงที่อยู่
-                let addressArr = [];
-                if(item.building) addressArr.push(item.building);
-                if(item.floorRoom) addressArr.push(`ชั้น/ห้อง ${item.floorRoom}`);
-                if(item.houseNo) addressArr.push(`เลขที่ ${item.houseNo}`);
-                if(item.moo) addressArr.push(`หมู่ที่ ${item.moo}`); // <--- เปลี่ยน หมู่ เป็น หมู่ที่
-                if(item.alley) addressArr.push(`ซอย${item.alley}`);
-                if(item.road) addressArr.push(`ถนน${item.road}`);
-                if(item.subDistrict) addressArr.push(`ต.${item.subDistrict}`);
-                if(item.district) addressArr.push(`อ.${item.district}`);
-                if(item.province) addressArr.push(`จ.${item.province}`);
-                if(item.zipCode) addressArr.push(item.zipCode);
-                const fullAddress = addressArr.join(' ') || '-';
+                const fullAddress = buildFullAddress(item);
+                const safeHeadName = escapeHTML(item.headName);
+                const safeHeadTitle = escapeHTML(item.headTitle);
+                const safePhotoUrl = escapeHTML(item.headPhoto);
+
+                // กรอบรูปหัวหน้าหน่วยงานที่เข้ากับธีมของเว็บ
+                const photoHtml = item.headPhoto ? `
+                    <div onclick="previewHeadPhotoModal('${safePhotoUrl}', '${safeHeadName}', '${safeHeadTitle}')" 
+                         title="คลิกเพื่อดูรูปขนาดใหญ่"
+                         class="w-16 h-20 rounded-xl overflow-hidden border-2 border-primary-200 ring-2 ring-primary-50 shadow-sm shrink-0 bg-primary-50 cursor-pointer group relative">
+                        <img src="${safePhotoUrl}" alt="${safeHeadName}" 
+                             onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        <div class="hidden w-full h-full flex items-center justify-center text-primary-300">
+                            <i class="fa-solid fa-user-tie text-2xl"></i>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="w-16 h-20 rounded-xl border border-primary-100 bg-gradient-to-b from-primary-50 to-slate-100 flex items-center justify-center text-primary-400 shrink-0 shadow-inner">
+                        <i class="fa-solid fa-user-tie text-2xl"></i>
+                    </div>
+                `;
 
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow overflow-hidden flex flex-col relative';
                 
                 card.innerHTML = `
-                    <div class="bg-slate-50 px-5 py-4 border-b border-slate-200">
-                        <span class="inline-block px-2 py-1 rounded text-[10px] font-semibold tracking-wide mb-2 ${badgeColor}">${item.agencyType}</span>
-                        <h3 class="font-bold text-lg text-slate-800 line-clamp-2" title="${item.agencyName}">${item.agencyName}</h3>
+                    <div class="bg-gradient-to-r from-slate-50 to-primary-50/40 px-5 py-4 border-b border-slate-200">
+                        <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide mb-2 ${badgeColor}">${escapeHTML(item.agencyType)}</span>
+                        <h3 class="font-bold text-lg text-slate-800 line-clamp-2" title="${escapeHTML(item.agencyName)}">${escapeHTML(item.agencyName)}</h3>
                         <div class="flex items-center text-slate-600 mt-2 text-sm">
                             <i class="fa-solid fa-phone w-5 text-primary-500"></i>
-                            <a href="tel:${item.agencyPhone}" class="hover:text-primary-600 font-medium">${item.agencyPhone}</a>
+                            <a href="tel:${escapeHTML(item.agencyPhone)}" class="hover:text-primary-600 font-medium">${escapeHTML(item.agencyPhone)}</a>
                         </div>
                     </div>
                     <div class="p-5 flex-grow space-y-4">
                         
-                        <!-- ข้อมูลหัวหน้าหน่วยงาน -->
-                        <div class="flex items-start">
-                            <i class="fa-solid fa-user-tie w-6 mt-1 text-slate-400"></i>
-                            <div>
-                                <p class="text-sm text-slate-500 mb-0.5">หัวหน้าหน่วยงาน</p>
-                                <p class="font-medium text-slate-800">${item.headName}</p>
-                                <p class="text-sm text-slate-600">${item.headTitle}</p>
-                                <a href="tel:${item.headMobile}" class="text-sm font-medium text-slate-800 hover:text-primary-600 mt-1 inline-block"><i class="fa-solid fa-mobile-screen-button mr-1"></i> ${item.headMobile}</a>
+                        <!-- ข้อมูลหัวหน้าหน่วยงาน + กรอบรูป -->
+                        <div class="flex items-start gap-3.5">
+                            ${photoHtml}
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-medium text-primary-600 mb-0.5"><i class="fa-solid fa-user-tie mr-1"></i>หัวหน้าหน่วยงาน</p>
+                                <p class="font-semibold text-slate-800 leading-snug">${safeHeadName}</p>
+                                <p class="text-xs text-slate-600 mt-0.5 leading-snug">${safeHeadTitle}</p>
+                                <a href="tel:${escapeHTML(item.headMobile)}" class="text-sm font-medium text-slate-800 hover:text-primary-600 mt-1.5 inline-flex items-center gap-1 bg-slate-100 hover:bg-primary-50 px-2.5 py-1 rounded-lg transition-colors">
+                                    <i class="fa-solid fa-mobile-screen-button text-primary-600"></i> ${escapeHTML(item.headMobile)}
+                                </a>
                             </div>
                         </div>
                         
                         <!-- ที่ตั้งสำนักงาน -->
                         <div class="pt-3 border-t border-slate-100 flex items-start">
-                            <i class="fa-solid fa-location-dot w-6 mt-1 text-red-400"></i>
+                            <i class="fa-solid fa-location-dot w-6 mt-1 text-red-400 shrink-0"></i>
                             <div class="w-full">
-                                <p class="text-sm text-slate-500 mb-0.5">ที่ตั้งสำนักงาน</p>
-                                <p class="text-sm text-slate-700 leading-relaxed">${fullAddress}</p>
+                                <p class="text-xs text-slate-500 mb-0.5">ที่ตั้งสำนักงาน</p>
+                                <p class="text-sm text-slate-700 leading-relaxed">${escapeHTML(fullAddress)}</p>
                                 
                                 ${item.latLng ? `
                                 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.latLng)}" target="_blank" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors border border-blue-200">
@@ -798,16 +988,16 @@
                         <!-- หมายเหตุ -->
                         ${item.notes ? `
                         <div class="pt-3 border-t border-slate-100 flex items-start">
-                            <i class="fa-regular fa-comment-dots w-6 mt-0.5 text-amber-500"></i>
+                            <i class="fa-regular fa-comment-dots w-6 mt-0.5 text-amber-500 shrink-0"></i>
                             <div>
                                 <p class="text-xs text-slate-500 mb-0.5">หมายเหตุการติดต่อ</p>
-                                <p class="text-sm text-slate-700">${item.notes}</p>
+                                <p class="text-sm text-slate-700">${escapeHTML(item.notes)}</p>
                             </div>
                         </div>
                         ` : ''}
                     </div>
                     <div class="bg-slate-50 px-5 py-3 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center rounded-b-2xl">
-                        <span><i class="fa-regular fa-clock mr-1"></i> อัปเดต: ${item.lastUpdated || '-'}</span>
+                        <span><i class="fa-regular fa-clock mr-1"></i> อัปเดต: ${escapeHTML(item.lastUpdated || '-')}</span>
                     </div>
                 `;
                 container.appendChild(card);
@@ -815,7 +1005,7 @@
         }
 
         // ==========================================
-        // 5. ADMIN AUTHENTICATION & PANEL
+        // 7. ADMIN AUTHENTICATION & PANEL
         // ==========================================
         async function handleLogin(e) {
             e.preventDefault();
@@ -881,59 +1071,74 @@
                     toast: true, position: 'top-end', showConfirmButton: false, timer: 2000
                 });
             } else {
-                toggle.checked = !isSurveyOpen; // revert
+                toggle.checked = !isSurveyOpen;
                 Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเปลี่ยนสถานะได้', 'error');
             }
         }
 
         async function renderAdminTable() {
             const tbody = document.getElementById('adminTableBody');
-            tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500"><div class="loader mr-2 w-5 h-5 border-2 border-t-slate-500"></div> กำลังโหลดข้อมูลจากฐานข้อมูล...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500"><div class="loader mr-2 w-5 h-5 border-2 border-t-slate-500"></div> กำลังโหลดข้อมูลจากฐานข้อมูล...</td></tr>`;
             
             const res = await fetchAPI('getData');
             if(res.status === 'success') {
                 allAgencies = res.data || [];
+                isSurveyOpen = res.isSurveyOpen;
+                document.getElementById('toggleSurvey').checked = isSurveyOpen;
                 document.getElementById('adminDataCount').innerText = allAgencies.length;
                 tbody.innerHTML = '';
                 
                 if(allAgencies.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">ไม่มีข้อมูลในระบบ</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">ไม่มีข้อมูลในระบบ</td></tr>`;
                     return;
                 }
 
                 allAgencies.forEach((item, index) => {
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-slate-50 transition-colors';
+                    const avatarHtml = item.headPhoto
+                        ? `<img src="${escapeHTML(item.headPhoto)}" class="w-9 h-10 rounded-lg object-cover border border-slate-200 shrink-0" onerror="this.style.display='none'">`
+                        : `<div class="w-9 h-10 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-user-tie"></i></div>`;
+
                     tr.innerHTML = `
                         <td class="px-4 py-3 text-center">${index + 1}</td>
                         <td class="px-4 py-3">
-                            <div class="font-medium text-slate-800">${item.agencyName}</div>
-                            <div class="text-xs text-slate-500">${item.agencyPhone}</div>
+                            <div class="font-medium text-slate-800">${escapeHTML(item.agencyName)}</div>
+                            <div class="text-xs text-slate-500">${escapeHTML(item.agencyPhone)}</div>
                         </td>
-                        <td class="px-4 py-3"><span class="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">${item.agencyType}</span></td>
                         <td class="px-4 py-3">
-                            <div class="text-sm">${item.submitterName}</div>
-                            <div class="text-xs text-slate-500">${item.submitterPhone}</div>
+                            <div class="flex items-center gap-2.5">
+                                ${avatarHtml}
+                                <div>
+                                    <div class="font-medium text-slate-800 text-xs sm:text-sm">${escapeHTML(item.headName)}</div>
+                                    <div class="text-xs text-slate-500">${escapeHTML(item.headMobile)}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3"><span class="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">${escapeHTML(item.agencyType)}</span></td>
+                        <td class="px-4 py-3">
+                            <div class="text-sm">${escapeHTML(item.submitterName)}</div>
+                            <div class="text-xs text-slate-500">${escapeHTML(item.submitterPhone)}</div>
                         </td>
                         <td class="px-4 py-3">
                             <div class="text-xs text-slate-600 bg-slate-100 inline-block px-2 py-1 rounded-md border border-slate-200">
-                                <i class="fa-regular fa-clock mr-1"></i> ${item.lastUpdated || '-'}
+                                <i class="fa-regular fa-clock mr-1"></i> ${escapeHTML(item.lastUpdated || '-')}
                             </div>
                         </td>
                         <td class="px-4 py-3 text-center space-x-1">
-                            <button onclick="editRecord('${item.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteRecord('${item.id}')" class="text-red-600 hover:bg-red-50 p-2 rounded transition-colors" title="ลบ"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="editRecord('${escapeHTML(item.id)}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteRecord('${escapeHTML(item.id)}')" class="text-red-600 hover:bg-red-50 p-2 rounded transition-colors" title="ลบ"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
             } else {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
             }
         }
 
         function editRecord(id) {
-            const record = allAgencies.find(r => r.id == id);
+            const record = allAgencies.find(r => String(r.id) === String(id));
             if(!record) return;
 
             document.getElementById('recordId').value = record.id;
@@ -941,7 +1146,7 @@
             // ข้อมูลหน่วยงาน
             const typeSelect = document.getElementById('agencyType');
             const otherInput = document.getElementById('agencyTypeOther');
-            if(record.agencyType.startsWith('อื่นๆ')) {
+            if((record.agencyType || '').startsWith('อื่นๆ')) {
                 typeSelect.value = 'อื่นๆ';
                 const match = record.agencyType.match(/\((.*?)\)/); 
                 otherInput.value = match ? match[1] : '';
@@ -950,8 +1155,8 @@
                 otherInput.value = '';
             }
             toggleOtherTypeInput();
-            document.getElementById('agencyName').value = record.agencyName;
-            document.getElementById('agencyPhone').value = record.agencyPhone;
+            document.getElementById('agencyName').value = record.agencyName || '';
+            document.getElementById('agencyPhone').value = record.agencyPhone || '';
 
             // ข้อมูลที่ตั้ง
             document.getElementById('building').value = record.building || '';
@@ -965,7 +1170,6 @@
             document.getElementById('province').value = record.province || 'สุราษฎร์ธานี';
             document.getElementById('zipCode').value = record.zipCode || '84120';
             
-            // แยกค่าพิกัดมาลงช่อง 2 ช่องเมื่อกดแก้ไข
             if(record.latLng) {
                 const parts = record.latLng.split(',');
                 document.getElementById('latitude').value = parts[0] ? parts[0].trim() : '';
@@ -975,14 +1179,20 @@
                 document.getElementById('longitude').value = '';
             }
 
+            // รูปภาพหัวหน้าหน่วยงาน
+            selectedPhotoBase64 = '';
+            document.getElementById('headPhotoInput').value = '';
+            document.getElementById('existingHeadPhoto').value = record.headPhoto || '';
+            showPhotoPreview(record.headPhoto || '');
+
             // ข้อมูลบุคคล
-            document.getElementById('headName').value = record.headName;
-            document.getElementById('headTitle').value = record.headTitle;
-            document.getElementById('headMobile').value = record.headMobile;
+            document.getElementById('headName').value = record.headName || '';
+            document.getElementById('headTitle').value = record.headTitle || '';
+            document.getElementById('headMobile').value = record.headMobile || '';
             document.getElementById('notes').value = record.notes || '';
-            document.getElementById('submitterName').value = record.submitterName;
-            document.getElementById('submitterTitle').value = record.submitterTitle;
-            document.getElementById('submitterPhone').value = record.submitterPhone;
+            document.getElementById('submitterName').value = record.submitterName || '';
+            document.getElementById('submitterTitle').value = record.submitterTitle || '';
+            document.getElementById('submitterPhone').value = record.submitterPhone || '';
 
             document.getElementById('btnSubmit').innerHTML = '<i class="fa-solid fa-save"></i> <span>บันทึกการแก้ไข</span>';
             document.getElementById('btnCancelEdit').classList.remove('hidden');
@@ -1008,9 +1218,303 @@
             });
         }
 
+        // ==========================================
+        // 8. EXPORT EXCEL (.xlsx) & PDF (A4)
+        // ==========================================
+        function exportToExcel() {
+            if (!allAgencies || allAgencies.length === 0) {
+                Swal.fire('ไม่มีข้อมูล', 'ไม่พบข้อมูลสำหรับส่งออกไฟล์ Excel', 'warning');
+                return;
+            }
+
+            const sortedData = [...allAgencies].sort((a, b) => {
+                const typeCmp = (a.agencyType || '').localeCompare(b.agencyType || '', 'th');
+                return typeCmp !== 0 ? typeCmp : (a.agencyName || '').localeCompare(b.agencyName || '', 'th');
+            });
+
+            const exportDate = getCurrentThaiDate();
+            const sheetRows = [
+                ['ทำเนียบส่วนราชการ หน่วยงานรัฐวิสาหกิจ องค์กรปกครองส่วนท้องถิ่น และผู้นำท้องที่ อำเภอบ้านนาสาร จังหวัดสุราษฎร์ธานี'],
+                [`ข้อมูล ณ วันที่ ${exportDate} | จำนวนทั้งหมด ${sortedData.length} หน่วยงาน`],
+                [],
+                [
+                    'ลำดับ', 'ประเภทหน่วยงาน', 'ชื่อหน่วยงาน', 'หมายเลขโทรศัพท์หน่วยงาน',
+                    'ที่ตั้งสำนักงาน', 'ตำบล', 'พิกัด (ละติจูด, ลองจิจูด)',
+                    'ชื่อ-สกุล หัวหน้าหน่วยงาน', 'ตำแหน่ง', 'โทรศัพท์มือถือหัวหน้าหน่วยงาน',
+                    'หมายเหตุการติดต่อ', 'ชื่อผู้แจ้งข้อมูล', 'ตำแหน่งผู้แจ้ง', 'เบอร์โทรผู้แจ้ง', 'อัปเดตล่าสุด'
+                ]
+            ];
+
+            sortedData.forEach((item, idx) => {
+                sheetRows.push([
+                    idx + 1,
+                    item.agencyType || '',
+                    item.agencyName || '',
+                    String(item.agencyPhone || ''),
+                    buildFullAddress(item),
+                    item.subDistrict || '',
+                    item.latLng || '',
+                    item.headName || '',
+                    item.headTitle || '',
+                    String(item.headMobile || ''),
+                    item.notes || '',
+                    item.submitterName || '',
+                    item.submitterTitle || '',
+                    String(item.submitterPhone || ''),
+                    item.lastUpdated || ''
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+
+            // ผสานเซลล์หัวเรื่อง (แถวที่ 1 และ 2)
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } }
+            ];
+
+            // กำหนดความกว้างคอลัมน์ให้อ่านง่าย
+            ws['!cols'] = [
+                { wch: 7 },  // ลำดับ
+                { wch: 28 }, // ประเภท
+                { wch: 32 }, // ชื่อหน่วยงาน
+                { wch: 18 }, // โทรหน่วยงาน
+                { wch: 45 }, // ที่ตั้ง
+                { wch: 14 }, // ตำบล
+                { wch: 22 }, // พิกัด
+                { wch: 26 }, // ชื่อหัวหน้า
+                { wch: 26 }, // ตำแหน่ง
+                { wch: 18 }, // มือถือหัวหน้า
+                { wch: 24 }, // หมายเหตุ
+                { wch: 22 }, // ผู้แจ้ง
+                { wch: 20 }, // ตำแหน่งผู้แจ้ง
+                { wch: 16 }, // เบอร์ผู้แจ้ง
+                { wch: 20 }  // อัปเดตล่าสุด
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'ทำเนียบหน่วยงาน');
+
+            const todayStr = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `ทำเนียบหน่วยงาน_อำเภอบ้านนาสาร_${todayStr}.xlsx`);
+        }
+
+        function exportToPDF() {
+            if (!allAgencies || allAgencies.length === 0) {
+                Swal.fire('ไม่มีข้อมูล', 'ไม่พบข้อมูลสำหรับสร้างรายงาน PDF', 'warning');
+                return;
+            }
+
+            const sortedData = [...allAgencies].sort((a, b) => {
+                const typeCmp = (a.agencyType || '').localeCompare(b.agencyType || '', 'th');
+                return typeCmp !== 0 ? typeCmp : (a.agencyName || '').localeCompare(b.agencyName || '', 'th');
+            });
+
+            const exportDate = getCurrentThaiDate();
+            let tableRowsHtml = '';
+            sortedData.forEach((item, idx) => {
+                tableRowsHtml += `
+                    <tr>
+                        <td class="text-center">${idx + 1}</td>
+                        <td>
+                            <div class="font-bold">${escapeHTML(item.agencyName)}</div>
+                            <div class="sub-text">${escapeHTML(item.agencyType)}</div>
+                        </td>
+                        <td class="text-center whitespace-nowrap">${escapeHTML(item.agencyPhone || '-')}</td>
+                        <td>${escapeHTML(buildFullAddress(item))}</td>
+                        <td>
+                            <div class="font-bold">${escapeHTML(item.headName)}</div>
+                            <div class="sub-text">${escapeHTML(item.headTitle)}</div>
+                        </td>
+                        <td class="text-center whitespace-nowrap">${escapeHTML(item.headMobile || '-')}</td>
+                        <td>${escapeHTML(item.notes || '-')}</td>
+                    </tr>
+                `;
+            });
+
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                Swal.fire('เบราว์เซอร์บล็อกหน้าต่างป๊อปอัป', 'กรุณาอนุญาต Pop-up เพื่อเปิดหน้าพิมพ์เอกสาร PDF (A4)', 'warning');
+                return;
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="th">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>ทำเนียบหน่วยงาน อำเภอบ้านนาสาร จังหวัดสุราษฎร์ธานี</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        @page {
+                            size: A4 landscape;
+                            margin: 12mm 10mm 12mm 10mm;
+                        }
+                        * { box-sizing: border-box; }
+                        body {
+                            font-family: 'Sarabun', sans-serif;
+                            font-size: 13px;
+                            color: #1e293b;
+                            margin: 0;
+                            padding: 0;
+                            background: #f1f5f9;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                        .no-print {
+                            position: sticky;
+                            top: 0;
+                            background: #0f172a;
+                            color: #fff;
+                            padding: 10px 20px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                            z-index: 100;
+                        }
+                        .no-print button {
+                            font-family: 'Sarabun', sans-serif;
+                            font-size: 14px;
+                            font-weight: 600;
+                            padding: 7px 16px;
+                            border: none;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            margin-left: 8px;
+                        }
+                        .btn-print { background: #0284c7; color: #fff; }
+                        .btn-print:hover { background: #0369a1; }
+                        .btn-close { background: #475569; color: #fff; }
+                        .btn-close:hover { background: #334155; }
+
+                        .page-container {
+                            background: #fff;
+                            max-width: 297mm;
+                            margin: 16px auto;
+                            padding: 12mm 10mm;
+                            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                        }
+                        .report-header {
+                            text-align: center;
+                            margin-bottom: 14px;
+                            border-bottom: 2px solid #0284c7;
+                            padding-bottom: 10px;
+                        }
+                        .report-header h1 {
+                            font-size: 18px;
+                            font-weight: 700;
+                            margin: 0 0 4px 0;
+                            color: #0f172a;
+                        }
+                        .report-header h2 {
+                            font-size: 15px;
+                            font-weight: 600;
+                            margin: 0 0 6px 0;
+                            color: #0369a1;
+                        }
+                        .report-meta {
+                            font-size: 12px;
+                            color: #475569;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 8px;
+                        }
+                        thead {
+                            display: table-header-group;
+                        }
+                        tr {
+                            page-break-inside: avoid;
+                            break-inside: avoid;
+                        }
+                        th, td {
+                            border: 1px solid #94a3b8;
+                            padding: 6px 7px;
+                            vertical-align: top;
+                            line-height: 1.35;
+                        }
+                        th {
+                            background-color: #e0f2fe;
+                            color: #0c4a6e;
+                            font-weight: 700;
+                            text-align: center;
+                            font-size: 13px;
+                        }
+                        tbody tr:nth-child(even) {
+                            background-color: #f8fafc;
+                        }
+                        .text-center { text-align: center; }
+                        .font-bold { font-weight: 700; color: #0f172a; }
+                        .sub-text { font-size: 11.5px; color: #475569; margin-top: 2px; }
+                        .whitespace-nowrap { white-space: nowrap; }
+
+                        @media print {
+                            body { background: #fff; }
+                            .no-print { display: none !important; }
+                            .page-container {
+                                max-width: none;
+                                margin: 0;
+                                padding: 0;
+                                box-shadow: none;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="no-print">
+                        <div><strong>ตัวอย่างเอกสาร A4 พร้อมพิมพ์ / บันทึกเป็น PDF</strong> (เลือกปลายทางเป็น "Save as PDF" เพื่อดาวน์โหลดไฟล์)</div>
+                        <div>
+                            <button class="btn-print" onclick="window.print()">พิมพ์ / บันทึกเป็น PDF</button>
+                            <button class="btn-close" onclick="window.close()">ปิดหน้าต่าง</button>
+                        </div>
+                    </div>
+
+                    <div class="page-container">
+                        <div class="report-header">
+                            <h1>ทำเนียบส่วนราชการ หน่วยงานรัฐวิสาหกิจ องค์กรปกครองส่วนท้องถิ่น และผู้นำท้องที่</h1>
+                            <h2>อำเภอบ้านนาสาร จังหวัดสุราษฎร์ธานี</h2>
+                            <div class="report-meta">ข้อมูล ณ วันที่ ${escapeHTML(exportDate)} &nbsp;|&nbsp; จำนวนทั้งหมด ${sortedData.length} หน่วยงาน</div>
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%;">ลำดับ</th>
+                                    <th style="width: 21%;">ชื่อหน่วยงาน / ประเภท</th>
+                                    <th style="width: 11%;">โทรศัพท์หน่วยงาน</th>
+                                    <th style="width: 24%;">ที่ตั้งสำนักงาน</th>
+                                    <th style="width: 18%;">หัวหน้าหน่วยงาน / ตำแหน่ง</th>
+                                    <th style="width: 11%;">โทรศัพท์มือถือ</th>
+                                    <th style="width: 10%;">หมายเหตุ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() { window.print(); }, 600);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        // ผูกฟังก์ชันจัดรูปแบบเบอร์โทรศัพท์อัตโนมัติ (แก้ปัญหามือถือพิมพ์ขีด - ไม่ได้)
         ['agencyPhone', 'headMobile', 'submitterPhone'].forEach(id => {
             const el = document.getElementById(id);
-            if(el) el.addEventListener('input', function() { this.value = this.value.replace(/[^0-9-]/g, ''); });
+            if(el) {
+                el.addEventListener('input', function() {
+                    this.value = formatPhoneInput(this.value);
+                });
+            }
         });
 
         window.onload = () => {
