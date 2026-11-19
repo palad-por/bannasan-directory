@@ -1,0 +1,16 @@
+{
+  "name": "ระบบทำเนียบหน่วยงาน อำเภอบ้านนาสาร จังหวัดสุราษฎร์ธานี",
+  "short_name": "ทำเนียบบ้านนาสาร",
+  "description": "ระบบค้นหาข้อมูลติดต่อหน่วยงานในอำเภอบ้านนาสาร จังหวัดสุราษฎร์ธานี",
+  "lang": "th",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7fbff",
+  "theme_color": "#078dcc",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
